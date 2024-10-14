@@ -1,3 +1,8 @@
 {
-  "appName": "Xbot Survey"
+  "appName": "Xbot Survey",
+  "survey": "Khảo sát",
+
+  "actions": {
+    "create": "Tạo"
+  }
 }
