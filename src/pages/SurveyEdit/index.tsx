@@ -1,18 +1,29 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import _ from 'lodash';
 import { PlusCircle, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
+import { z } from 'zod';
 
 import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -20,172 +31,298 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-
-type Question = {
-  id: number;
-  type: string;
-  text: string;
-  options?: string[];
-};
+import { Question, Survey } from '@/features/surveys/type';
+import { generateID } from '@/lib/utils';
+import { translations } from '@/locales/translations';
+import { backendService } from '@/services';
 
 export default function CreateSurvey() {
   const navigate = useNavigate();
   const { id: surveyId } = useParams<{ id: string }>();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const { t } = useTranslation();
+  const [questions, setQuestions] = useState<CustomObject<Question>>({});
 
-  const addQuestion = () => {
-    setQuestions([...questions, { id: Date.now(), type: 'text', text: '' }]);
+  const updateQuestion = (
+    id: string,
+    path: (string | number)[],
+    value: string
+  ) => {
+    setQuestions((pre) => {
+      const updated = _.cloneDeep(pre);
+      _.set(updated, [id, ...path], value);
+      console.log(updated);
+
+      return updated;
+    });
   };
 
-  const updateQuestion = (id: number, field: string, value: string) => {
-    setQuestions(
-      questions.map((q) => (q.id === id ? { ...q, [field]: value } : q))
-    );
-  };
+  const formSchema = z.object({
+    logo: z.string().optional(),
+    title: z.string(),
+    description: z.string(),
+  });
 
-  const addOption = (questionId: number) => {
-    setQuestions(
-      questions.map((q) =>
-        q.id === questionId ? { ...q, options: [...(q.options || []), ''] } : q
-      )
-    );
-  };
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: '',
+      description: '',
+    },
+  });
 
-  const updateOption = (questionId: number, index: number, value: string) => {
-    setQuestions(
-      questions.map((q) =>
-        q.id === questionId
-          ? {
-              ...q,
-              options: q.options?.map((opt, i) => (i === index ? value : opt)),
-            }
-          : q
-      )
-    );
-  };
+  useEffect(() => {
+    try {
+      if (surveyId != 'new') {
+        (async () => {
+          const result: WithApiResult<Survey> = await backendService.post(
+            '/surveys/get',
+            { id: surveyId }
+          );
+          if (result.kind === 'ok') {
+            form.reset({
+              title: result.data.title,
+              description: result.data.description,
+              logo: result.data.logo,
+            });
+            setQuestions(result.data.questions);
+          }
+        })();
+      }
+    } catch (error: any) {
+      console.error(error);
+    }
+  }, [form, surveyId]);
 
-  const removeQuestion = (id: number) => {
-    setQuestions(questions.filter((q) => q.id !== id));
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      if (surveyId === 'new') {
+        const result: WithApiResult<{ id: string }> = await backendService.post(
+          '/surveys/create',
+          {
+            data: {
+              ...values,
+              questions,
+              _id: generateID(),
+            },
+          }
+        );
+        if (result.kind === 'ok') {
+          navigate(`/${result.data.id}`);
+        }
+      } else {
+        await backendService.post('/surveys/update', {
+          id: surveyId,
+          data: {
+            ...values,
+            questions,
+          },
+        });
+      }
+    } catch (error: any) {
+      console.error(error);
+    }
   };
 
   return (
     <div className="container mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold mb-6">Create New Survey</h1>
-        <Button onClick={() => navigate(`/${surveyId}`)}>Save & Preview</Button>
+        <h1 className="text-3xl font-bold mb-6">
+          {t(
+            surveyId === 'new'
+              ? translations.actions.create
+              : translations.actions.edit
+          )}{' '}
+          {t(translations.survey)}
+        </h1>
+        <div>
+          {surveyId !== 'new' ? (
+            <Button
+              className="mr-4"
+              onClick={() => {
+                navigate(`/${surveyId}`);
+              }}
+            >
+              Xem trước
+            </Button>
+          ) : null}
+          <Button onClick={form.handleSubmit(onSubmit)}>Lưu</Button>
+        </div>
       </div>
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Survey Details</CardTitle>
-          <CardDescription>
-            Enter the basic information about your survey
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Survey Title</Label>
-            <Input
-              id="title"
-              placeholder="Enter survey title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+      <Form {...form}>
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>{t(translations.surveyDetail)}</CardTitle>
+            <CardDescription>
+              Nhập thông tin cơ bản cho khảo sát của bạn
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="logo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Logo</FormLabel>
+                  <FormControl>
+                    <Input placeholder="https://..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              placeholder="Enter survey description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tiêu đề</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      id="description"
+                      rows={5}
+                      placeholder="Enter survey description"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-        </CardContent>
-      </Card>
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Mô tả</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      id="description"
+                      rows={15}
+                      placeholder="Enter survey description"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
+        </Card>
 
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Questions</CardTitle>
-          <CardDescription>
-            Add and configure your survey questions
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {questions.map((question) => (
-            <Card key={question.id}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Question {questions.indexOf(question) + 1}
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeQuestion(question.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Select
-                  value={question.type}
-                  onValueChange={(value) =>
-                    updateQuestion(question.id, 'type', value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select question type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="text">Text</SelectItem>
-                    <SelectItem value="multipleChoice">
-                      Multiple Choice
-                    </SelectItem>
-                    <SelectItem value="checkbox">Checkbox</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Input
-                  placeholder="Enter question text"
-                  value={question.text}
-                  onChange={(e) =>
-                    updateQuestion(question.id, 'text', e.target.value)
-                  }
-                />
-                {(question.type === 'multipleChoice' ||
-                  question.type === 'checkbox') && (
-                  <div className="space-y-2">
-                    {question.options?.map((option, index) => (
-                      <Input
-                        key={index}
-                        placeholder={`Option ${index + 1}`}
-                        value={option}
-                        onChange={(e) =>
-                          updateOption(question.id, index, e.target.value)
-                        }
-                      />
-                    ))}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => addOption(question.id)}
-                    >
-                      Add Option
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-          <Button onClick={addQuestion}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Add Question
-          </Button>
-        </CardContent>
-      </Card>
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Questions</CardTitle>
+            <CardDescription>
+              Add and configure your survey questions
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {Object.entries(questions).map(([key, question], index) => (
+              <Card key={`question-${key}`}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Question {index + 1}
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setQuestions((pre) => {
+                        const updated = { ...pre };
+                        _.unset(updated, key);
+                        return updated;
+                      });
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="text-sm">Loại câu hỏi</div>
+                  <Select
+                    value={question.type}
+                    onValueChange={(value) =>
+                      updateQuestion(key, ['type'], value)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select question type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(translations.questionTypes).map(
+                        ([type, value]) => (
+                          <SelectItem key={type} value={type}>
+                            {t(value)}
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <div className="text-sm">Nhập câu hỏi</div>
+                  <Input
+                    placeholder="Enter question text"
+                    value={question.text}
+                    onChange={(e) =>
+                      updateQuestion(key, ['text'], e.target.value)
+                    }
+                  />
+                  {(question.type === 'radio' ||
+                    question.type === 'questionGroup' ||
+                    question.type === 'checkbox') && (
+                    <div className="space-y-2">
+                      <div className="text-sm">Nhập phương án/câu hỏi phụ</div>
 
-      <Card>
+                      {question?.params?.map((paramValue, paramIndex) => (
+                        <Input
+                          key={`param-${key}-${paramIndex}`}
+                          placeholder={`Option ${paramIndex + 1}`}
+                          value={paramValue}
+                          onChange={(e) => {
+                            updateQuestion(
+                              key,
+                              ['params', paramIndex],
+                              e.target.value
+                            );
+                          }}
+                        />
+                      ))}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          updateQuestion(
+                            key,
+                            ['params', question.params?.length || 0],
+                            ''
+                          );
+                        }}
+                      >
+                        Add Field
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+            <Button
+              onClick={() => {
+                setQuestions((pre) => ({
+                  ...pre,
+                  [generateID()]: {
+                    type: 'input',
+                    text: '',
+                  },
+                }));
+              }}
+            >
+              <PlusCircle className="mr-2 h-4 w-4" /> Add Question
+            </Button>
+          </CardContent>
+        </Card>
+      </Form>
+
+      {/* <Card>
         <CardHeader>
           <CardTitle>Survey Settings</CardTitle>
         </CardHeader>
@@ -202,7 +339,7 @@ export default function CreateSurvey() {
           </div>
         </CardContent>
         <CardFooter></CardFooter>
-      </Card>
+      </Card> */}
     </div>
   );
 }

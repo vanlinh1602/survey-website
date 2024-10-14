@@ -1,13 +1,21 @@
 import { FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import logo from '@/assets/logo.png';
 import { translations } from '@/locales/translations';
 
 const Sidebar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
+
+  console.log(location, location.pathname.split('/'));
+  const splitPath = location.pathname.split('/');
+  if (splitPath.length === 2 && splitPath[1] !== '') {
+    return null;
+  }
+
   return (
     <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
       <div className="flex p-4 text-xl font-bold text-gray-800 dark:text-white items-center">

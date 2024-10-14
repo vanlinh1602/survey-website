@@ -1,4 +1,5 @@
 import { PlusCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,12 +12,34 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { generateID } from '@/lib/utils';
+import { Survey } from '@/features/surveys/type';
 import { translations } from '@/locales/translations';
+import { backendService } from '@/services';
 
 export default function Component() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [surveys, setSurveys] = useState<Survey[]>([]);
+
+  const fetchSurveys = async () => {
+    try {
+      const result: WithApiResult<Survey[]> = await backendService.post(
+        '/surveys/query',
+        {}
+      );
+      if (result.kind === 'ok') {
+        setSurveys(result.data);
+        return;
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSurveys();
+  }, []);
+
   return (
     <>
       <div className="flex justify-between items-center mb-6">
@@ -25,8 +48,7 @@ export default function Component() {
         </h1>
         <Button
           onClick={() => {
-            const id = generateID();
-            navigate(`/${id}/edit`);
+            navigate('/new/edit');
           }}
         >
           <PlusCircle className="mr-2 h-4 w-4" />
@@ -37,10 +59,10 @@ export default function Component() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Sample Survey Cards */}
-        {[1, 2, 3, 4].map((i) => (
-          <Card key={i}>
+        {surveys.map((survey) => (
+          <Card key={survey.id}>
             <CardHeader>
-              <CardTitle>Customer Satisfaction Survey {i}</CardTitle>
+              <CardTitle>{survey.title}</CardTitle>
               <CardDescription>Last edited 2 days ago</CardDescription>
             </CardHeader>
             <CardContent>
@@ -49,10 +71,13 @@ export default function Component() {
               </p>
             </CardContent>
             <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={() => navigate(`/${i}/edit`)}>
+              <Button
+                variant="outline"
+                onClick={() => navigate(`/${survey.id}/edit`)}
+              >
                 Edit
               </Button>
-              <Button onClick={() => navigate(`/${i}/results`)}>
+              <Button onClick={() => navigate(`/${survey.id}/results`)}>
                 View Results
               </Button>
             </CardFooter>

@@ -9,4 +9,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  define: {
+    'import.meta.env.REACT_APP_STAGE': JSON.stringify(
+      process.env.REACT_APP_STAGE
+    ),
+  },
 });

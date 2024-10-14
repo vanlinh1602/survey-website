@@ -3,6 +3,16 @@
   "survey": "Khảo sát",
 
   "actions": {
-    "create": "Tạo"
-  }
+    "create": "Tạo",
+    "edit": "Sửa"
+  },
+
+  "questionTypes": {
+    "radio": "Chọn một phương án",
+    "checkbox": "Chọn nhiều phương án",
+    "input": "Nhập câu trả lời",
+    "questionGroup": "Nhóm câu hỏi"
+  },
+
+  "surveyDetail": "Chi tiết khảo sát"
 }

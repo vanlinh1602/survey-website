@@ -1,8 +1,18 @@
 'use client';
 
+import _ from 'lodash';
 import { AlertCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import Markdown from 'react-markdown';
+import { useParams } from 'react-router-dom';
+import remarkGfm from 'remark-gfm';
 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,55 +20,33 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Textarea } from '@/components/ui/textarea';
-
-// Sample survey data (in a real app, this would come from an API or database)
-const surveyData = {
-  id: '1',
-  title: 'Customer Satisfaction Survey',
-  description: 'Help us improve our services by providing your feedback.',
-  questions: [
-    {
-      id: 'q1',
-      type: 'text',
-      text: 'What is your name?',
-      required: true,
-    },
-    {
-      id: 'q2',
-      type: 'multipleChoice',
-      text: 'How satisfied are you with our product?',
-      options: [
-        'Very Satisfied',
-        'Satisfied',
-        'Neutral',
-        'Dissatisfied',
-        'Very Dissatisfied',
-      ],
-      required: true,
-    },
-    {
-      id: 'q3',
-      type: 'checkbox',
-      text: 'Which features do you use most? (Select all that apply)',
-      options: ['Feature A', 'Feature B', 'Feature C', 'Feature D'],
-      required: false,
-    },
-    {
-      id: 'q4',
-      type: 'textarea',
-      text: 'Do you have any additional comments or suggestions?',
-      required: false,
-    },
-  ],
-};
-
-export default function ListSurvey() {
-  const [responses, setResponses] = useState<Record<string, string | string[]>>(
-    {}
-  );
+import type { Survey } from '@/features/surveys/type';
+import { backendService } from '@/services';
+export default function SurveyView() {
+  const { id } = useParams<{ id: string }>();
+  const [responses, setResponses] = useState<
+    CustomObject<string | string[] | string[][]>
+  >({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [surveyData, setSurveyData] = useState<Survey>();
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const result: WithApiResult<Survey> = await backendService.post(
+          '/surveys/get',
+          { id }
+        );
+        if (result.kind === 'ok') {
+          // Here you would typically set the survey data in the state
+          console.log('Survey data:', result.data);
+          setSurveyData(result.data);
+        }
+      } catch (error: any) {
+        console.error(error);
+      }
+    })();
+  }, [id]);
 
   const handleTextChange = (questionId: string, value: string) => {
     setResponses((prev) => ({ ...prev, [questionId]: value }));
@@ -89,38 +77,53 @@ export default function ListSurvey() {
     setErrors((prev) => ({ ...prev, [questionId]: '' }));
   };
 
-  const validateResponses = () => {
-    const newErrors: Record<string, string> = {};
-    surveyData.questions.forEach((question) => {
-      if (question.required) {
-        const response = responses[question.id];
-        if (!response || (Array.isArray(response) && response.length === 0)) {
-          newErrors[question.id] = 'This question is required';
-        }
-      }
+  const hanleQuestionGroupChange = (
+    questionId: string,
+    path: (string | number)[],
+    value: any
+  ) => {
+    setResponses((prev) => {
+      const currentValues = _.cloneDeep(prev);
+      _.set(currentValues, [questionId, ...path], value);
+      return currentValues;
     });
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
-    if (validateResponses()) {
-      console.log('Survey responses:', responses);
-      // Here you would typically send the responses to your backend
-      alert('Thank you for completing the survey!');
-    } else {
-      alert('Please answer all required questions before submitting.');
+  const handleSubmit = async () => {
+    try {
+      const data = {
+        surveyId: id,
+        answers: responses,
+      };
+      const result: WithApiResult<{ id: string }> = await backendService.post(
+        '/responses/create',
+        { data }
+      );
+      if (result.kind === 'ok') {
+        console.log('Response created:', result.data);
+      }
+    } catch (error: any) {
+      console.error(error);
     }
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-3xl">
-      <h1 className="text-3xl font-bold mb-6">{surveyData.title}</h1>
-      <p className="text-muted-foreground mb-6">{surveyData.description}</p>
+    <div className="container mx-auto max-w-3xl">
+      <div className="flex flex-col items-center mb-3">
+        <img
+          src={surveyData?.logo}
+          alt="survey"
+          className="w-40 h-40 object-cover rounded-full mb-6"
+        />
+        <Markdown remarkPlugins={[remarkGfm]}>{surveyData?.title}</Markdown>
+      </div>
+      <Markdown className="mb-3" remarkPlugins={[remarkGfm]}>
+        {surveyData?.description}
+      </Markdown>
 
-      <ScrollArea className="h-[60vh] pr-4 -mr-4">
-        {surveyData.questions.map((question) => (
-          <Card key={question.id} className="mb-6">
+      {Object.entries(surveyData?.questions ?? {}).map(
+        ([questionId, question]) => (
+          <Card key={questionId} className="mb-6">
             <CardHeader>
               <CardTitle className="flex items-center">
                 {question.text}
@@ -128,38 +131,53 @@ export default function ListSurvey() {
                   <span className="text-red-500 ml-1">*</span>
                 )}
               </CardTitle>
-              {errors[question.id] && (
+              {errors[questionId] && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>{errors[question.id]}</AlertDescription>
+                  <AlertDescription>{errors[questionId]}</AlertDescription>
                 </Alert>
               )}
             </CardHeader>
             <CardContent>
-              {question.type === 'text' && (
+              {question.type === 'questionGroup' ? (
+                <div className="flex justify-end">
+                  <Button
+                    variant="secondary"
+                    onClick={() =>
+                      hanleQuestionGroupChange(
+                        questionId,
+                        [(responses?.[questionId] as string[][])?.length || 0],
+                        []
+                      )
+                    }
+                  >
+                    Thêm câu trả lời
+                  </Button>
+                </div>
+              ) : null}
+
+              {question.type === 'input' && (
                 <Input
-                  value={(responses[question.id] as string) || ''}
-                  onChange={(e) =>
-                    handleTextChange(question.id, e.target.value)
-                  }
+                  value={(responses[questionId] as string) || ''}
+                  onChange={(e) => handleTextChange(questionId, e.target.value)}
                   placeholder="Enter your answer"
                 />
               )}
-              {question.type === 'multipleChoice' && (
+              {question.type === 'radio' && (
                 <RadioGroup
-                  value={responses[question.id] as string}
+                  value={responses[questionId] as string}
                   onValueChange={(value) =>
-                    handleMultipleChoiceChange(question.id, value)
+                    handleMultipleChoiceChange(questionId, value)
                   }
                 >
-                  {question.options?.map((option) => (
+                  {question.params?.map((option) => (
                     <div key={option} className="flex items-center space-x-2">
                       <RadioGroupItem
                         value={option}
-                        id={`${question.id}-${option}`}
+                        id={`${questionId}-${option}`}
                       />
-                      <Label htmlFor={`${question.id}-${option}`}>
+                      <Label htmlFor={`${questionId}-${option}`}>
                         {option}
                       </Label>
                     </div>
@@ -168,42 +186,75 @@ export default function ListSurvey() {
               )}
               {question.type === 'checkbox' && (
                 <div className="space-y-2">
-                  {question.options?.map((option) => (
+                  {question.params?.map((option) => (
                     <div key={option} className="flex items-center space-x-2">
                       <Checkbox
-                        id={`${question.id}-${option}`}
+                        id={`${questionId}-${option}`}
                         checked={(
-                          (responses[question.id] as string[]) || []
+                          (responses[questionId] as string[]) || []
                         ).includes(option)}
                         onCheckedChange={(checked) =>
                           handleCheckboxChange(
-                            question.id,
+                            questionId,
                             option,
                             checked as boolean
                           )
                         }
                       />
-                      <Label htmlFor={`${question.id}-${option}`}>
+                      <Label htmlFor={`${questionId}-${option}`}>
                         {option}
                       </Label>
                     </div>
                   ))}
                 </div>
               )}
-              {question.type === 'textarea' && (
-                <Textarea
-                  value={(responses[question.id] as string) || ''}
-                  onChange={(e) =>
-                    handleTextChange(question.id, e.target.value)
-                  }
-                  placeholder="Enter your answer"
-                  rows={4}
-                />
+              {question.type === 'questionGroup' && (
+                <div className="space-y-2 ">
+                  {_.range(
+                    (responses?.[questionId] as string[][])?.length || 1
+                  ).map((response) => (
+                    <Accordion
+                      type="single"
+                      collapsible
+                      defaultValue={`item-${response}`}
+                    >
+                      <AccordionItem value={`item-${response}`}>
+                        <AccordionTrigger>
+                          Câu trả lời {response + 1}
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="px-2 grid grid-cols-2 gap-4">
+                            {question.params?.map((subQuestion, index) => (
+                              <div>
+                                <div>{subQuestion}</div>
+                                <Input
+                                  value={
+                                    responses?.[questionId]?.[response]?.[
+                                      index
+                                    ] || ''
+                                  }
+                                  onChange={(e) =>
+                                    hanleQuestionGroupChange(
+                                      questionId,
+                                      [response, index],
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder="Enter your answer"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>
-        ))}
-      </ScrollArea>
+        )
+      )}
 
       <div className="mt-6">
         <Button onClick={handleSubmit} className="w-full">
