@@ -35,24 +35,22 @@ export default function SurveyView() {
   const [loading, setLoading] = useState(false);
   const [isSent, setIsSent] = useState(false);
 
-  useEffect(() => {
-    setLoading(true);
+  const fetchSurvey = async () => {
     try {
-      (async () => {
-        const result: WithApiResult<Survey> = await backendService.post(
-          '/surveys/get',
-          { id }
-        );
-        if (result.kind === 'ok') {
-          setSurveyData(result.data);
-        } else {
-          toast({
-            title: 'Error',
-            description: formatError(result),
-            variant: 'destructive',
-          });
-        }
-      })();
+      setLoading(true);
+      const result: WithApiResult<Survey> = await backendService.post(
+        '/surveys/get',
+        { id }
+      );
+      if (result.kind === 'ok') {
+        setSurveyData(result.data);
+      } else {
+        toast({
+          title: 'Error',
+          description: formatError(result),
+          variant: 'destructive',
+        });
+      }
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -62,7 +60,12 @@ export default function SurveyView() {
     } finally {
       setLoading(false);
     }
-  }, [id, toast]);
+  };
+
+  useEffect(() => {
+    fetchSurvey();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleTextChange = (questionId: string, value: string) => {
     setResponses((prev) => ({ ...prev, [questionId]: value }));
@@ -133,13 +136,6 @@ export default function SurveyView() {
         { data }
       );
       if (result.kind === 'ok') {
-        // localStorage.setItem(
-        //   'sent',
-        //   JSON.stringify({
-        //     ...JSON.parse(localStorage.getItem('sent') || '{}'),
-        //     [id || '']: true,
-        //   })
-        // );
         setIsSent(true);
       }
     } catch (error: any) {
