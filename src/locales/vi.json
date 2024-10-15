@@ -8,10 +8,11 @@
   },
 
   "questionTypes": {
-    "radio": "Chọn một phương án",
-    "checkbox": "Chọn nhiều phương án",
+    "radio": "Radio",
+    "checkbox": "Checkbox",
     "input": "Nhập câu trả lời",
-    "questionGroup": "Nhóm câu hỏi"
+    "questionGroup": "Nhóm câu hỏi",
+    "select": "Chọn câu trả lời"
   },
 
   "surveyDetail": "Chi tiết khảo sát"

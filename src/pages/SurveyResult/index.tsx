@@ -1,3 +1,15 @@
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import {
+  Bar,
+  BarChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+
+import { toast } from '@/components/hooks/use-toast';
 import {
   Card,
   CardContent,
@@ -13,8 +25,58 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Response } from '@/features/responses/type';
+import { Survey } from '@/features/surveys/type';
+import { backendService } from '@/services';
+
+const data = [
+  { name: 'Strongly Disagree', value: 10 },
+  { name: 'Disagree', value: 20 },
+  { name: 'Neutral', value: 30 },
+  { name: 'Agree', value: 25 },
+  { name: 'Strongly Agree', value: 15 },
+];
 
 export default function ViewResults() {
+  const { id: surveyId } = useParams<{ id: string }>();
+  const [survey, setSurvey] = useState<Survey>();
+  const [responses, setResponses] = useState<Response[]>([]);
+
+  const fetchData = async () => {
+    try {
+      const surveyResult: WithApiResult<Survey> = await backendService.post(
+        '/surveys/get',
+        {
+          id: surveyId,
+        }
+      );
+      if (surveyResult.kind === 'ok') {
+        setSurvey(surveyResult.data);
+      }
+
+      const responseResult: WithApiResult<Response[]> =
+        await backendService.post('/responses/query', {
+          query: { surveyId },
+        });
+      if (responseResult.kind === 'ok') {
+        setResponses(responseResult.data);
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+    console.log('survey', survey);
+    console.log('responses', responses);
+  }, [surveyId]);
+
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">
@@ -42,6 +104,59 @@ export default function ViewResults() {
           </div>
         </CardContent>
       </Card>
+
+      <Tabs defaultValue="chart" className="mb-6">
+        <TabsList>
+          <TabsTrigger value="chart">Chart View</TabsTrigger>
+          <TabsTrigger value="table">Table View</TabsTrigger>
+        </TabsList>
+        <TabsContent value="chart">
+          <Card>
+            <CardHeader>
+              <CardTitle>Response Distribution</CardTitle>
+            </CardHeader>
+            <CardContent className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data}>
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#8884d8" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="table">
+          <Card>
+            <CardHeader>
+              <CardTitle>Response Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Response</TableHead>
+                    <TableHead>Count</TableHead>
+                    <TableHead>Percentage</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.map((item) => (
+                    <TableRow key={item.name}>
+                      <TableCell>{item.name}</TableCell>
+                      <TableCell>{item.value}</TableCell>
+                      <TableCell>
+                        {((item.value / 100) * 100).toFixed(2)}%
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <Card>
         <CardHeader>

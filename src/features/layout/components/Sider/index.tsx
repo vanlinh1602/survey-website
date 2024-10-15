@@ -10,7 +10,6 @@ const Sidebar = () => {
   const location = useLocation();
   const { t } = useTranslation();
 
-  console.log(location, location.pathname.split('/'));
   const splitPath = location.pathname.split('/');
   if (splitPath.length === 2 && splitPath[1] !== '') {
     return null;

@@ -1,4 +1,6 @@
+import Parser from 'html-react-parser';
 import { PlusCircle } from 'lucide-react';
+import moment from 'moment';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -42,10 +44,7 @@ export default function Component() {
 
   return (
     <>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-          Your Surveys
-        </h1>
+      <div className="flex justify-end items-center mb-6">
         <Button
           onClick={() => {
             navigate('/new/edit');
@@ -62,12 +61,14 @@ export default function Component() {
         {surveys.map((survey) => (
           <Card key={survey.id}>
             <CardHeader>
-              <CardTitle>{survey.title}</CardTitle>
-              <CardDescription>Last edited 2 days ago</CardDescription>
+              <CardTitle className="max-h-12 overflow-hidden overflow-ellipsis">
+                <div className="!text-start">{Parser(survey.title)}</div>
+              </CardTitle>
+              <CardDescription>{moment().fromNow()}</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                10 questions • 100 responses
+                {Object.keys(survey.questions).length} Câu hỏi
               </p>
             </CardContent>
             <CardFooter className="flex justify-between">
@@ -75,10 +76,10 @@ export default function Component() {
                 variant="outline"
                 onClick={() => navigate(`/${survey.id}/edit`)}
               >
-                Edit
+                Chỉnh sửa
               </Button>
               <Button onClick={() => navigate(`/${survey.id}/results`)}>
-                View Results
+                Xem chi tiết
               </Button>
             </CardFooter>
           </Card>

@@ -7,6 +7,8 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { z } from 'zod';
 
+import { BundledEditor, DropzoneModal, Waiting } from '@/components';
+import { useToast } from '@/components/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -31,17 +33,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { Question, Survey } from '@/features/surveys/type';
 import { generateID } from '@/lib/utils';
 import { translations } from '@/locales/translations';
 import { backendService } from '@/services';
+import formatError from '@/utils/formatError';
 
 export default function CreateSurvey() {
+  const { toast } = useToast();
   const navigate = useNavigate();
   const { id: surveyId } = useParams<{ id: string }>();
   const { t } = useTranslation();
   const [questions, setQuestions] = useState<CustomObject<Question>>({});
+  const [waiting, setWaiting] = useState(false);
 
   const updateQuestion = (
     id: string,
@@ -86,15 +90,26 @@ export default function CreateSurvey() {
               logo: result.data.logo,
             });
             setQuestions(result.data.questions);
+          } else {
+            toast({
+              title: 'Error',
+              description: formatError(result),
+              variant: 'destructive',
+            });
           }
         })();
       }
     } catch (error: any) {
-      console.error(error);
+      toast({
+        title: 'Error',
+        description: formatError(error),
+        variant: 'destructive',
+      });
     }
-  }, [form, surveyId]);
+  }, [form, surveyId, toast]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setWaiting(true);
     try {
       if (surveyId === 'new') {
         const result: WithApiResult<{ id: string }> = await backendService.post(
@@ -111,21 +126,40 @@ export default function CreateSurvey() {
           navigate(`/${result.data.id}`);
         }
       } else {
-        await backendService.post('/surveys/update', {
+        const result = await backendService.post('/surveys/update', {
           id: surveyId,
           data: {
             ...values,
             questions,
           },
         });
+        if (result.kind === 'ok') {
+          toast({
+            title: 'Success',
+            description: 'Survey updated successfully',
+          });
+        } else {
+          toast({
+            title: 'Error',
+            description: formatError(result),
+            variant: 'destructive',
+          });
+        }
       }
     } catch (error: any) {
-      console.error(error);
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setWaiting(false);
     }
   };
 
   return (
     <div className="container mx-auto">
+      {waiting ? <Waiting /> : null}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold mb-6">
           {t(
@@ -165,7 +199,26 @@ export default function CreateSurvey() {
                 <FormItem>
                   <FormLabel>Logo</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://..." {...field} />
+                    <div className="flex items-center">
+                      {field.value && (
+                        <img
+                          src={field.value}
+                          alt="Logo"
+                          className="w-14 h-14 object-cover rounded-full mr-4"
+                        />
+                      )}
+                      <DropzoneModal
+                        content="Upload Logo"
+                        onSubmit={(files) => {
+                          // convert file to base64
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            field.onChange(reader.result as string);
+                          };
+                          reader.readAsDataURL(files[0]);
+                        }}
+                      />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -178,11 +231,35 @@ export default function CreateSurvey() {
                 <FormItem>
                   <FormLabel>Tiêu đề</FormLabel>
                   <FormControl>
-                    <Textarea
-                      id="description"
-                      rows={5}
-                      placeholder="Enter survey description"
-                      {...field}
+                    <BundledEditor
+                      initialValue={field.value}
+                      onChange={(_e, editor) => {
+                        const content = editor.getContent();
+                        field.onChange(content);
+                      }}
+                      init={{
+                        height: 150,
+                        menubar: false,
+                        plugins: [
+                          'advlist',
+                          'anchor',
+                          'autolink',
+                          'help',
+                          'image',
+                          'link',
+                          'lists',
+                          'searchreplace',
+                          'table',
+                          'wordcount',
+                        ],
+                        toolbar:
+                          'undo redo | blocks | ' +
+                          'bold italic forecolor | alignleft aligncenter ' +
+                          'alignright alignjustify | bullist numlist outdent indent | ' +
+                          'removeformat | help',
+                        content_style:
+                          'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -196,11 +273,35 @@ export default function CreateSurvey() {
                 <FormItem>
                   <FormLabel>Mô tả</FormLabel>
                   <FormControl>
-                    <Textarea
-                      id="description"
-                      rows={15}
-                      placeholder="Enter survey description"
-                      {...field}
+                    <BundledEditor
+                      onChange={(_e, editor) => {
+                        const content = editor.getContent();
+                        field.onChange(content);
+                      }}
+                      initialValue={field.value}
+                      init={{
+                        height: 300,
+                        menubar: false,
+                        plugins: [
+                          'advlist',
+                          'anchor',
+                          'autolink',
+                          'help',
+                          'image',
+                          'link',
+                          'lists',
+                          'searchreplace',
+                          'table',
+                          'wordcount',
+                        ],
+                        toolbar:
+                          'undo redo | blocks | ' +
+                          'bold italic forecolor | alignleft aligncenter ' +
+                          'alignright alignjustify | bullist numlist outdent indent | ' +
+                          'removeformat | help',
+                        content_style:
+                          'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -268,6 +369,7 @@ export default function CreateSurvey() {
                     }
                   />
                   {(question.type === 'radio' ||
+                    question.type === 'select' ||
                     question.type === 'questionGroup' ||
                     question.type === 'checkbox') && (
                     <div className="space-y-2">
@@ -287,19 +389,33 @@ export default function CreateSurvey() {
                           }}
                         />
                       ))}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          updateQuestion(
-                            key,
-                            ['params', question.params?.length || 0],
-                            ''
-                          );
-                        }}
-                      >
-                        Add Field
-                      </Button>
+                      <div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            updateQuestion(
+                              key,
+                              ['params', question.params?.length || 0],
+                              ''
+                            );
+                          }}
+                        >
+                          Thêm phương án
+                        </Button>
+
+                        <DropzoneModal
+                          content="Import Phương án"
+                          onSubmit={(files) => {
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              const content = reader.result as string;
+                              console.log(content);
+                            };
+                            reader.readAsBinaryString(files[0]);
+                          }}
+                        />
+                      </div>
                     </div>
                   )}
                 </CardContent>
