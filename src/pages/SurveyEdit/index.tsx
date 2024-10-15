@@ -93,6 +93,7 @@ export default function CreateSurvey() {
     if (surveyId != 'new') {
       initData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [surveyId]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
