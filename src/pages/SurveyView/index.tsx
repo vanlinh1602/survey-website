@@ -105,9 +105,25 @@ export default function SurveyView() {
     });
   };
 
+  const checkValidation = () => {
+    const newErrors: Record<string, string> = {};
+    Object.entries(surveyData?.questions ?? {}).forEach(
+      ([questionId, question]) => {
+        if (question.required && !responses[questionId]) {
+          newErrors[questionId] = 'Đây là câu hỏi bắt buộc';
+        }
+      }
+    );
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
     try {
+      if (!checkValidation()) {
+        return;
+      }
       const data = {
         surveyId: id,
         answers: responses,
@@ -168,7 +184,7 @@ export default function SurveyView() {
               {errors[questionId] && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
+                  <AlertTitle>Thiếu thông tin</AlertTitle>
                   <AlertDescription>{errors[questionId]}</AlertDescription>
                 </Alert>
               )}
