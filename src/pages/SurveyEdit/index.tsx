@@ -404,7 +404,7 @@ export default function CreateSurvey() {
                           Thêm phương án
                         </Button>
 
-                        <DropzoneModal
+                        {/* <DropzoneModal
                           content="Import Phương án"
                           onSubmit={(files) => {
                             const reader = new FileReader();
@@ -414,7 +414,7 @@ export default function CreateSurvey() {
                             };
                             reader.readAsBinaryString(files[0]);
                           }}
-                        />
+                        /> */}
                       </div>
                     </div>
                   )}

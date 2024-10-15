@@ -34,9 +34,7 @@ function App() {
   const router = createBrowserRouter(
     createRoutesFromElements(
       <Route element={<AppLayout />}>
-        {import.meta.env.REACT_APP_STAGE === 'development' ? (
-          <Route path="/" element={<HomePage />} />
-        ) : null}
+        <Route path="/" element={<HomePage />} />
         <Route path="/:id" element={<Outlet />}>
           <Route path="edit" element={<SurveyEditPage />} />
           <Route path="results" element={<SurveyResultPage />} />
