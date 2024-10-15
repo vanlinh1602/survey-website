@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
+import { Waiting } from '@/components';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -14,27 +15,23 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { querySurveys } from '@/features/surveys/api';
 import { Survey } from '@/features/surveys/type';
 import { translations } from '@/locales/translations';
-import { backendService } from '@/services';
 
 export default function Component() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [surveys, setSurveys] = useState<Survey[]>([]);
+  const [waiting, setWaiting] = useState(false);
 
   const fetchSurveys = async () => {
+    setWaiting(true);
     try {
-      const result: WithApiResult<Survey[]> = await backendService.post(
-        '/surveys/query',
-        {}
-      );
-      if (result.kind === 'ok') {
-        setSurveys(result.data);
-        return;
-      }
-    } catch (error) {
-      console.log(error);
+      const result = await querySurveys();
+      setSurveys(result);
+    } finally {
+      setWaiting(false);
     }
   };
 
@@ -44,6 +41,7 @@ export default function Component() {
 
   return (
     <>
+      {waiting ? <Waiting /> : null}
       <div className="flex justify-end items-center mb-6">
         <Button
           onClick={() => {

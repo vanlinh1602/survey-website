@@ -21,8 +21,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { createResponse } from '@/features/responses/api';
+import { getSurvey } from '@/features/surveys/api';
 import type { Survey } from '@/features/surveys/type';
-import { backendService } from '@/services';
 import formatError from '@/utils/formatError';
 export default function SurveyView() {
   const { toast } = useToast();
@@ -38,25 +39,10 @@ export default function SurveyView() {
   const fetchSurvey = async () => {
     try {
       setLoading(true);
-      const result: WithApiResult<Survey> = await backendService.post(
-        '/surveys/get',
-        { id }
-      );
-      if (result.kind === 'ok') {
-        setSurveyData(result.data);
-      } else {
-        toast({
-          title: 'Error',
-          description: formatError(result),
-          variant: 'destructive',
-        });
+      const result = await getSurvey(id || '');
+      if (result) {
+        setSurveyData(result);
       }
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: formatError(error),
-        variant: 'destructive',
-      });
     } finally {
       setLoading(false);
     }
@@ -131,18 +117,9 @@ export default function SurveyView() {
         surveyId: id,
         answers: responses,
       };
-      const result: WithApiResult<{ id: string }> = await backendService.post(
-        '/responses/create',
-        { data }
-      );
-      if (result.kind === 'ok') {
+      const result = await createResponse(data);
+      if (result.id) {
         setIsSent(true);
-      } else {
-        toast({
-          title: 'Error',
-          description: formatError(result),
-          variant: 'destructive',
-        });
       }
     } catch (error: any) {
       toast({

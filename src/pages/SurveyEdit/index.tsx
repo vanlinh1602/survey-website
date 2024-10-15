@@ -33,11 +33,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Question, Survey } from '@/features/surveys/type';
+import { createSurvey, getSurvey, updateSurvey } from '@/features/surveys/api';
+import { Question } from '@/features/surveys/type';
 import { generateID } from '@/lib/utils';
 import { translations } from '@/locales/translations';
-import { backendService } from '@/services';
-import formatError from '@/utils/formatError';
 
 export default function CreateSurvey() {
   const { toast } = useToast();
@@ -55,8 +54,6 @@ export default function CreateSurvey() {
     setQuestions((pre) => {
       const updated = _.cloneDeep(pre);
       _.set(updated, [id, ...path], value);
-      console.log(updated);
-
       return updated;
     });
   };
@@ -75,89 +72,61 @@ export default function CreateSurvey() {
     },
   });
 
-  useEffect(() => {
+  const initData = async () => {
+    setWaiting(true);
     try {
-      if (surveyId != 'new') {
-        (async () => {
-          const result: WithApiResult<Survey> = await backendService.post(
-            '/surveys/get',
-            { id: surveyId }
-          );
-          if (result.kind === 'ok') {
-            form.reset({
-              title: result.data.title,
-              description: result.data.description,
-              logo: result.data.logo,
-            });
-            setQuestions(result.data.questions);
-          } else {
-            toast({
-              title: 'Error',
-              description: formatError(result),
-              variant: 'destructive',
-            });
-          }
-        })();
+      const result = await getSurvey(surveyId || '');
+      if (result) {
+        form.reset({
+          title: result.title,
+          description: result.description,
+          logo: result.logo,
+        });
+        setQuestions(result.questions);
       }
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: formatError(error),
-        variant: 'destructive',
-      });
+    } finally {
+      setWaiting(false);
     }
-  }, [form, surveyId, toast]);
+  };
+
+  useEffect(() => {
+    if (surveyId != 'new') {
+      initData();
+    }
+  }, [surveyId]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setWaiting(true);
     try {
       if (surveyId === 'new') {
-        const result: WithApiResult<{ id: string }> = await backendService.post(
-          '/surveys/create',
-          {
-            data: {
-              ...values,
-              questions,
-              lasted: {
-                time: Date.now(),
-              },
-              _id: generateID(),
-            },
-          }
-        );
-        if (result.kind === 'ok') {
-          navigate(`/${result.data.id}`);
+        const data = {
+          ...values,
+          questions,
+          lasted: {
+            time: Date.now(),
+          },
+          id: generateID(),
+        };
+        const result = await createSurvey(data);
+        if (result) {
+          navigate(`/${result}`);
         }
       } else {
-        const result = await backendService.post('/surveys/update', {
-          id: surveyId,
-          data: {
-            ...values,
-            questions,
-            lasted: {
-              time: Date.now(),
-            },
+        const data = {
+          ...values,
+          questions,
+          lasted: {
+            time: Date.now(),
           },
-        });
-        if (result.kind === 'ok') {
+        };
+        const result = await updateSurvey(surveyId!, data);
+        if (result) {
           toast({
             title: 'Success',
             description: 'Survey updated successfully',
           });
-        } else {
-          toast({
-            title: 'Error',
-            description: formatError(result),
-            variant: 'destructive',
-          });
         }
       }
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
     } finally {
       setWaiting(false);
     }
@@ -422,7 +391,6 @@ export default function CreateSurvey() {
                             const reader = new FileReader();
                             reader.onload = () => {
                               const content = reader.result as string;
-                              console.log(content);
                             };
                             reader.readAsBinaryString(files[0]);
                           }}

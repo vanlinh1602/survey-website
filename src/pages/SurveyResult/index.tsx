@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 
+import { Waiting } from '@/components';
 import { toast } from '@/components/hooks/use-toast';
 import {
   Card,
@@ -12,9 +13,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { getResponses } from '@/features/responses/api';
 import { Response } from '@/features/responses/type';
+import { getSurvey } from '@/features/surveys/api';
 import { Survey } from '@/features/surveys/type';
-import { backendService } from '@/services';
 
 // const data = [
 //   { name: 'Strongly Disagree', value: 10 },
@@ -28,32 +30,25 @@ export default function ViewResults() {
   const { id: surveyId } = useParams<{ id: string }>();
   const [survey, setSurvey] = useState<Survey>();
   const [responses, setResponses] = useState<Response[]>([]);
+  const [waiting, setWaiting] = useState(false);
 
   const fetchData = async () => {
+    setWaiting(true);
     try {
-      const surveyResult: WithApiResult<Survey> = await backendService.post(
-        '/surveys/get',
-        {
-          id: surveyId,
-        }
-      );
-      if (surveyResult.kind === 'ok') {
-        setSurvey(surveyResult.data);
+      const surveyResult = await getSurvey(surveyId || '');
+      if (surveyResult) {
+        setSurvey(surveyResult);
       }
-
-      const responseResult: WithApiResult<Response[]> =
-        await backendService.post('/responses/query', {
-          query: { surveyId },
-        });
-      if (responseResult.kind === 'ok') {
-        setResponses(responseResult.data);
-      }
+      const responseResult = await getResponses(surveyId || '');
+      setResponses(responseResult);
     } catch (error: any) {
       toast({
         title: 'Error',
         description: error.message,
         variant: 'destructive',
       });
+    } finally {
+      setWaiting(false);
     }
   };
 
@@ -127,6 +122,7 @@ export default function ViewResults() {
 
   return (
     <div className="container mx-auto p-6">
+      {waiting ? <Waiting /> : null}
       <h1 className="text-3xl font-bold mb-6">Thống kê khảo sát</h1>
       <Card className="mb-6">
         <CardHeader>
