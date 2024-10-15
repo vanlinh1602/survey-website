@@ -1,13 +1,8 @@
+import _ from 'lodash';
+import { SheetIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import {
-  Bar,
-  BarChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import * as XLSX from 'xlsx';
 
 import { toast } from '@/components/hooks/use-toast';
 import {
@@ -17,26 +12,17 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Response } from '@/features/responses/type';
 import { Survey } from '@/features/surveys/type';
 import { backendService } from '@/services';
 
-const data = [
-  { name: 'Strongly Disagree', value: 10 },
-  { name: 'Disagree', value: 20 },
-  { name: 'Neutral', value: 30 },
-  { name: 'Agree', value: 25 },
-  { name: 'Strongly Agree', value: 15 },
-];
+// const data = [
+//   { name: 'Strongly Disagree', value: 10 },
+//   { name: 'Disagree', value: 20 },
+//   { name: 'Neutral', value: 30 },
+//   { name: 'Agree', value: 25 },
+//   { name: 'Strongly Agree', value: 15 },
+// ];
 
 export default function ViewResults() {
   const { id: surveyId } = useParams<{ id: string }>();
@@ -73,39 +59,90 @@ export default function ViewResults() {
 
   useEffect(() => {
     fetchData();
-    console.log('survey', survey);
-    console.log('responses', responses);
-  }, [surveyId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const exportExcel = async () => {
+    const header: CustomObject<string> = {};
+    Object.entries(survey?.questions ?? {}).forEach(([key, value]) => {
+      if (value.subQuestions) {
+        value.subQuestions.forEach((subQuestion, index) => {
+          header[`${key}-${index}`] = `${value.text} - ${subQuestion.content}`;
+        });
+      } else {
+        header[key] = value.text;
+      }
+    });
+
+    const result: CustomObject<string>[] = [];
+    responses.forEach((response) => {
+      const tmp: CustomObject<string>[] = [];
+      Object.entries(response.answers).forEach(([key, value]) => {
+        switch (survey?.questions[key].type) {
+          case 'input': {
+            _.set(tmp, [0, key], value);
+            break;
+          }
+          case 'radio':
+          case 'select': {
+            _.set(
+              tmp,
+              [0, key],
+              _.get(survey?.questions[key].params, [value as string], '')
+            );
+            break;
+          }
+          case 'questionGroup': {
+            (value as string[][]).forEach((v, k) => {
+              v.forEach((vv, kk) => {
+                _.set(tmp, [k, `${key}-${kk}`], vv);
+              });
+            });
+            break;
+          }
+          default:
+            break;
+        }
+      });
+      result.push(...tmp);
+    });
+
+    const ws = XLSX.utils.json_to_sheet([header, ...result], {
+      skipHeader: true,
+    });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Responses');
+    XLSX.writeFile(wb, 'survey_responses.xlsx');
+  };
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">
-        Customer Satisfaction Survey Results
-      </h1>
+      <h1 className="text-3xl font-bold mb-6">Thống kê khảo sát</h1>
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Survey Summary</CardTitle>
           <CardDescription>Overview of survey responses</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="text-center">
-              <h3 className="text-2xl font-bold">100</h3>
+              <h3 className="text-2xl font-bold">{responses.length}</h3>
               <p className="text-muted-foreground">Total Responses</p>
             </div>
-            <div className="text-center">
-              <h3 className="text-2xl font-bold">4.2</h3>
-              <p className="text-muted-foreground">Average Rating</p>
-            </div>
-            <div className="text-center">
-              <h3 className="text-2xl font-bold">85%</h3>
-              <p className="text-muted-foreground">Completion Rate</p>
+            <div
+              className="text-center flex items-center flex-col cursor-pointer"
+              onClick={exportExcel}
+            >
+              <h3 className="text-2xl font-bold">
+                <SheetIcon className="text-center" />
+              </h3>
+              <p className="text-muted-foreground">Xuất Excel</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="chart" className="mb-6">
+      {/* <Tabs defaultValue="chart" className="mb-6">
         <TabsList>
           <TabsTrigger value="chart">Chart View</TabsTrigger>
           <TabsTrigger value="table">Table View</TabsTrigger>
@@ -184,7 +221,7 @@ export default function ViewResults() {
             </TableBody>
           </Table>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }

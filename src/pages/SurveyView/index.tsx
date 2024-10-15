@@ -2,7 +2,7 @@
 
 import Parser from 'html-react-parser';
 import _ from 'lodash';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -137,9 +137,19 @@ export default function SurveyView() {
       );
       if (result.kind === 'ok') {
         setIsSent(true);
+      } else {
+        toast({
+          title: 'Error',
+          description: formatError(result),
+          variant: 'destructive',
+        });
       }
     } catch (error: any) {
-      console.error(error);
+      toast({
+        title: 'Error',
+        description: formatError(error),
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -266,10 +276,32 @@ export default function SurveyView() {
                     >
                       <AccordionItem value={`item-${response}`}>
                         <AccordionTrigger>
-                          Câu trả lời {response + 1}
+                          <div className="flex items-center">
+                            Câu trả lời {response + 1}
+                            {response ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setResponses((prev) => {
+                                    const currentValues = _.cloneDeep(prev);
+                                    const currentResponse =
+                                      currentValues[questionId];
+                                    (currentResponse as string[][])?.splice(
+                                      response,
+                                      1
+                                    );
+                                    return currentValues;
+                                  });
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            ) : null}
+                          </div>
                         </AccordionTrigger>
                         <AccordionContent>
-                          <div className="px-2 grid grid-cols-2 gap-4">
+                          <div className="px-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                             {question.subQuestions?.map(
                               (subQuestion, index) => (
                                 <div>
