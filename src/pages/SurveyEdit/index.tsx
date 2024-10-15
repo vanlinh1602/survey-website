@@ -118,6 +118,9 @@ export default function CreateSurvey() {
             data: {
               ...values,
               questions,
+              lasted: {
+                time: Date.now(),
+              },
               _id: generateID(),
             },
           }
@@ -131,6 +134,9 @@ export default function CreateSurvey() {
           data: {
             ...values,
             questions,
+            lasted: {
+              time: Date.now(),
+            },
           },
         });
         if (result.kind === 'ok') {
@@ -199,26 +205,33 @@ export default function CreateSurvey() {
                 <FormItem>
                   <FormLabel>Logo</FormLabel>
                   <FormControl>
-                    <div className="flex items-center">
-                      {field.value && (
-                        <img
-                          src={field.value}
-                          alt="Logo"
-                          className="w-14 h-14 object-cover rounded-full mr-4"
+                    <>
+                      <div className="flex items-center">
+                        {field.value && (
+                          <img
+                            src={field.value}
+                            alt="Logo"
+                            className="w-14 h-14 object-cover rounded-full mr-4"
+                          />
+                        )}
+                        <DropzoneModal
+                          content="Upload Logo"
+                          onSubmit={(files) => {
+                            // convert file to base64
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              field.onChange(reader.result as string);
+                            };
+                            reader.readAsDataURL(files[0]);
+                          }}
                         />
-                      )}
-                      <DropzoneModal
-                        content="Upload Logo"
-                        onSubmit={(files) => {
-                          // convert file to base64
-                          const reader = new FileReader();
-                          reader.onload = () => {
-                            field.onChange(reader.result as string);
-                          };
-                          reader.readAsDataURL(files[0]);
-                        }}
+                      </div>
+                      <Input
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Nhập URL logo"
                       />
-                    </div>
+                    </>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -370,10 +383,9 @@ export default function CreateSurvey() {
                   />
                   {(question.type === 'radio' ||
                     question.type === 'select' ||
-                    question.type === 'questionGroup' ||
                     question.type === 'checkbox') && (
                     <div className="space-y-2">
-                      <div className="text-sm">Nhập phương án/câu hỏi phụ</div>
+                      <div className="text-sm">Nhập phương án</div>
 
                       {question?.params?.map((paramValue, paramIndex) => (
                         <Input
@@ -415,6 +427,61 @@ export default function CreateSurvey() {
                             reader.readAsBinaryString(files[0]);
                           }}
                         /> */}
+                      </div>
+                    </div>
+                  )}
+                  {question.type === 'questionGroup' && (
+                    <div className="space-y-2">
+                      <div className="text-sm">Nhập câu hỏi phụ</div>
+                      {question?.subQuestions?.map((paramValue, paramIndex) => (
+                        <div className="flex space-x-3">
+                          <Input
+                            key={`param-${key}-${paramIndex}`}
+                            placeholder={`Câu hỏi phụ ${paramIndex + 1}`}
+                            value={paramValue.content}
+                            onChange={(e) => {
+                              updateQuestion(
+                                key,
+                                ['subQuestions', paramIndex, 'content'],
+                                e.target.value
+                              );
+                            }}
+                          />
+
+                          <Input
+                            key={`param-${key}-${paramIndex}`}
+                            placeholder={`Text mẫu hiện trong ô nhập ${
+                              paramIndex + 1
+                            }`}
+                            value={paramValue.placeholder}
+                            onChange={(e) => {
+                              updateQuestion(
+                                key,
+                                ['subQuestions', paramIndex, 'placeholder'],
+                                e.target.value
+                              );
+                            }}
+                          />
+                        </div>
+                      ))}
+                      <div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            updateQuestion(
+                              key,
+                              [
+                                'subQuestions',
+                                question.subQuestions?.length || 0,
+                                'content',
+                              ],
+                              ''
+                            );
+                          }}
+                        >
+                          Thêm câu hỏi
+                        </Button>
                       </div>
                     </div>
                   )}

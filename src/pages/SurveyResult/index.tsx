@@ -100,6 +100,16 @@ export default function ViewResults() {
             });
             break;
           }
+          case 'checkbox': {
+            _.set(
+              tmp,
+              [0, key],
+              (value as string[])
+                .map((v) => _.get(survey?.questions[key].params, [v], ''))
+                .join(', ')
+            );
+            break;
+          }
           default:
             break;
         }

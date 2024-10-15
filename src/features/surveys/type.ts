@@ -16,4 +16,7 @@ export type Survey = {
   title: string;
   description: string;
   questions: CustomObject<Question>;
+  lasted?: {
+    time: number;
+  };
 };

@@ -61,10 +61,14 @@ export default function Component() {
         {surveys.map((survey) => (
           <Card key={survey.id}>
             <CardHeader>
-              <CardTitle className="max-h-12 overflow-hidden overflow-ellipsis">
+              <CardTitle className="max-h-12 h-12 overflow-hidden overflow-ellipsis">
                 <div className="!text-start">{Parser(survey.title)}</div>
               </CardTitle>
-              <CardDescription>{moment().fromNow()}</CardDescription>
+              <CardDescription>
+                {survey.lasted?.time
+                  ? moment(survey.lasted?.time).fromNow()
+                  : '----'}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-500 dark:text-gray-400">

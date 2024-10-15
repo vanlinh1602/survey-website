@@ -171,7 +171,7 @@ export default function SurveyView() {
         <img
           src={surveyData?.logo}
           alt="survey"
-          className="w-40 h-40 object-cover rounded-full mb-6"
+          className="w-32 h-32 object-cover rounded-full mb-6"
         />
         {Parser(surveyData?.title ?? '')}
       </div>
@@ -227,10 +227,10 @@ export default function SurveyView() {
                     handleMultipleChoiceChange(questionId, value)
                   }
                 >
-                  {question.params?.map((option) => (
+                  {question.params?.map((option, index) => (
                     <div key={option} className="flex items-center space-x-2">
                       <RadioGroupItem
-                        value={option}
+                        value={index.toString()}
                         id={`${questionId}-${option}`}
                       />
                       <Label htmlFor={`${questionId}-${option}`}>
@@ -242,17 +242,17 @@ export default function SurveyView() {
               )}
               {question.type === 'checkbox' && (
                 <div className="space-y-2">
-                  {question.params?.map((option) => (
+                  {question.params?.map((option, index) => (
                     <div key={option} className="flex items-center space-x-2">
                       <Checkbox
                         id={`${questionId}-${option}`}
                         checked={(
                           (responses[questionId] as string[]) || []
-                        ).includes(option)}
+                        ).includes(index.toString())}
                         onCheckedChange={(checked) =>
                           handleCheckboxChange(
                             questionId,
-                            option,
+                            index.toString(),
                             checked as boolean
                           )
                         }
