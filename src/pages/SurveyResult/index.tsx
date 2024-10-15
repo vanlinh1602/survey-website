@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import { SheetIcon } from 'lucide-react';
+import moment from 'moment';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import * as XLSX from 'xlsx';
@@ -13,10 +14,20 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { getResponses } from '@/features/responses/api';
+import { ResponseDetail } from '@/features/responses/components';
 import { Response } from '@/features/responses/type';
 import { getSurvey } from '@/features/surveys/api';
 import { Survey } from '@/features/surveys/type';
+import { objectId2Date } from '@/lib/utils';
 
 // const data = [
 //   { name: 'Strongly Disagree', value: 10 },
@@ -31,6 +42,7 @@ export default function ViewResults() {
   const [survey, setSurvey] = useState<Survey>();
   const [responses, setResponses] = useState<Response[]>([]);
   const [waiting, setWaiting] = useState(false);
+  const [showDetail, setShowDetail] = useState<Response>();
 
   const fetchData = async () => {
     setWaiting(true);
@@ -123,6 +135,13 @@ export default function ViewResults() {
   return (
     <div className="container mx-auto p-6">
       {waiting ? <Waiting /> : null}
+      {showDetail ? (
+        <ResponseDetail
+          onClose={() => setShowDetail(undefined)}
+          survey={survey as Survey}
+          responses={showDetail}
+        />
+      ) : null}
       <h1 className="text-3xl font-bold mb-6">Thống kê khảo sát</h1>
       <Card className="mb-6">
         <CardHeader>
@@ -200,34 +219,49 @@ export default function ViewResults() {
           </Card>
         </TabsContent>
       </Tabs>
-
+ */}
       <Card>
         <CardHeader>
-          <CardTitle>Individual Responses</CardTitle>
+          <CardTitle>Tất cả phải hồi</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Respondent</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Rating</TableHead>
-                <TableHead>Comment</TableHead>
+                <TableHead>Người khảo sát</TableHead>
+                <TableHead>Ngày thực hiện</TableHead>
+                <TableHead>Số câu hỏi trả lời</TableHead>
+                <TableHead>Chi tiết</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {[...Array(5)].map((_, i) => (
+              {responses.map((respondent, i) => (
                 <TableRow key={i}>
-                  <TableCell>Respondent {i + 1}</TableCell>
-                  <TableCell>{new Date().toLocaleDateString()}</TableCell>
-                  <TableCell>{Math.floor(Math.random() * 5) + 1}</TableCell>
-                  <TableCell>Sample comment {i + 1}</TableCell>
+                  <TableCell>
+                    {respondent.user || `Người thứ ${i + 1}`}
+                  </TableCell>
+                  <TableCell>
+                    {moment(objectId2Date(respondent.id)).format('DD/MM/YYYY')}
+                  </TableCell>
+                  <TableCell>
+                    {Object.keys(respondent.answers).length}
+                  </TableCell>
+                  <TableCell>
+                    <button
+                      className="text-blue-500"
+                      onClick={() => {
+                        setShowDetail(respondent);
+                      }}
+                    >
+                      Xem chi tiết
+                    </button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </CardContent>
-      </Card> */}
+      </Card>
     </div>
   );
 }

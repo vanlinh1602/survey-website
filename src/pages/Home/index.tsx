@@ -81,7 +81,7 @@ export default function Component() {
                 Chỉnh sửa
               </Button>
               <Button onClick={() => navigate(`/${survey.id}/results`)}>
-                Xem chi tiết
+                Xem kết quả
               </Button>
             </CardFooter>
           </Card>

@@ -15,3 +15,6 @@ export const generateID = (
   if (ids.includes(id)) return generateID(ids, size);
   return id;
 };
+
+export const objectId2Date = (objectId: string): number =>
+  parseInt(objectId.substring(0, 8), 16) * 1000;
