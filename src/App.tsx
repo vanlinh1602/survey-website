@@ -77,7 +77,14 @@ function App() {
           </Route>
         </Route>
         <Route path="login" element={<LoginPage />} />
-        <Route path="*" element={<div>Not Found</div>} />
+        <Route
+          path="*"
+          element={
+            <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+              Trang không tồn tại
+            </div>
+          }
+        />
       </Route>
     )
   );
