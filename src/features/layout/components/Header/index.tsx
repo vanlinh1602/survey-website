@@ -1,7 +1,12 @@
+import { LayoutDashboard, LogOut } from 'lucide-react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useShallow } from 'zustand/shallow';
 
 import logo from '@/assets/logo.png';
+import { Button } from '@/components/ui/button';
+import { useUserStore } from '@/features/user/hooks';
 import { translations } from '@/locales/translations';
 
 const Header = () => {
@@ -10,15 +15,32 @@ const Header = () => {
   const location = useLocation();
 
   const splitPath = location.pathname.split('/');
-  if (splitPath.length === 2 && splitPath[1] !== '') {
+
+  const { userInfo, signOut } = useUserStore(
+    useShallow((userState) => ({
+      userInfo: userState.information,
+      signOut: userState.logout,
+    }))
+  );
+
+  const activeKey = useMemo(() => {
+    const path = location.pathname;
+    const key = path.split('/')[1];
+    return key || 'home';
+  }, [location.pathname]);
+
+  if (
+    (splitPath.length === 2 && splitPath[1] !== '') ||
+    activeKey === 'login'
+  ) {
     return null;
   }
 
   return (
     <header className="bg-white shadow-sm z-10">
       <div className="max-w-full max-h-20 mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-end items-center py-4">
-          <div className="flex justify-start lg:w-0 lg:flex-1 items-center">
+        <div className="grid grid-cols-3 items-center py-4">
+          <div className="flex justify-start  items-center">
             <img src={logo} alt="Logo" className="h-8 w-8 rounded-full mr-2" />
             <div
               className="text-xl font-bold text-gray-900 ml-2 cursor-pointer"
@@ -27,13 +49,57 @@ const Header = () => {
               {t(translations.appName)}
             </div>
           </div>
-          {/* <img
-            src={
-              'https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2024/07/24/15884296/d36e559a0a718d050fc2c911fa3d3365_8529512733030822447.png'
-            }
-            alt="Logo"
-            className="h-8 w-8 rounded-full"
-          /> */}
+
+          <nav className="flex space-x-10 items-center justify-center">
+            <div
+              id="home-header"
+              onClick={() => navigate('/')}
+              className="text-base font-medium text-gray-500 hover:text-gray-900 cursor-pointer"
+            >
+              <div
+                className={`${
+                  activeKey === 'home' ? 'text-gray-900' : 'text-gray-500'
+                } hover:text-gray-900`}
+              >
+                <LayoutDashboard className="inline-block mr-2 h-5 w-5" />
+                {t(translations.pages.home)}
+              </div>
+            </div>
+            {/* <div
+              id="match-header"
+              onClick={() => navigate('/')}
+              className="text-base font-medium text-gray-500 hover:text-gray-900 cursor-pointer"
+            >
+              <div
+                className={`${
+                  activeKey === 'users' ? 'text-gray-900' : 'text-gray-500'
+                } hover:text-gray-900`}
+              >
+                <User className="inline-block mr-2 h-5 w-5" />
+                {t(translations.pages.user)}
+              </div>
+            </div> */}
+          </nav>
+
+          <div className="flex justify-end items-center">
+            {userInfo?.avatar && (
+              <img
+                src={userInfo.avatar}
+                alt="Logo"
+                className="h-8 w-8 rounded-full mr-2"
+              />
+            )}
+            <div className="mr-2">{userInfo?.displayName}</div>
+            <Button
+              id="login-button"
+              variant="ghost"
+              size="icon"
+              className="mr-2"
+              onClick={() => signOut()}
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </div>
     </header>

@@ -2,9 +2,16 @@
   "appName": "Xbot Survey",
   "survey": "Khảo sát",
 
+  "pages": {
+    "home": "Trang chủ",
+    "user": "Người dùng"
+  },
+
   "actions": {
     "create": "Tạo",
-    "edit": "Sửa"
+    "edit": "Sửa",
+    "logIn": "Đăng nhập",
+    "register": "Đăng ký"
   },
 
   "questionTypes": {

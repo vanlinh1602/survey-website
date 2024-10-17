@@ -1,5 +1,6 @@
 import './index.css';
 import './locales/i18n';
+import './services/firebase';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

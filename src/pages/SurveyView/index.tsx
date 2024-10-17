@@ -134,6 +134,10 @@ export default function SurveyView() {
     }
   };
 
+  if (!surveyData) {
+    return <Waiting />;
+  }
+
   if (isSent) {
     return (
       <div className="container mx-auto max-w-3xl text-center">
