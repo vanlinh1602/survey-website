@@ -6,6 +6,7 @@ import { AlertCircle, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
+import sgdLogo from '@/assets/sgd_kien_giang.jpg';
 import { SearchableSelect, Waiting } from '@/components';
 import { useToast } from '@/components/hooks/use-toast';
 import {
@@ -25,6 +26,7 @@ import { createResponse } from '@/features/responses/api';
 import { getSurvey } from '@/features/surveys/api';
 import type { Survey } from '@/features/surveys/type';
 import formatError from '@/utils/formatError';
+
 export default function SurveyView() {
   const { toast } = useToast();
   const { id } = useParams<{ id: string }>();
@@ -145,12 +147,12 @@ export default function SurveyView() {
     <div className="container mx-auto max-w-3xl">
       {loading ? <Waiting /> : null}
       <div className="flex flex-col items-center mb-3">
-        <img
-          src={surveyData?.logo}
-          alt="survey"
-          className="w-32 h-32 object-cover rounded-full mb-6"
-        />
         {Parser(surveyData?.title ?? '')}
+        <img
+          src={sgdLogo}
+          alt="survey"
+          className="w-28 h-28 object-cover rounded-full mt-3"
+        />
       </div>
       <div className="mb-5">{Parser(surveyData?.description ?? '')}</div>
 
