@@ -4,7 +4,7 @@ import { PlusCircle, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { z } from 'zod';
 
 import { BundledEditor, Waiting } from '@/components';
@@ -42,6 +42,8 @@ export default function CreateSurvey() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { id: surveyId } = useParams<{ id: string }>();
+  const location = useLocation();
+  const isNew = location.state?.isNew || false;
   const { t } = useTranslation();
   const [questions, setQuestions] = useState<CustomObject<Question>>({});
   const [waiting, setWaiting] = useState(false);
@@ -90,7 +92,7 @@ export default function CreateSurvey() {
   };
 
   useEffect(() => {
-    if (surveyId != 'new') {
+    if (!isNew) {
       initData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -99,14 +101,14 @@ export default function CreateSurvey() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setWaiting(true);
     try {
-      if (surveyId === 'new') {
+      if (isNew) {
         const data = {
           ...values,
           questions,
           lasted: {
             time: Date.now(),
           },
-          id: generateID(),
+          id: surveyId!,
         };
         const result = await createSurvey(data);
         if (result) {
@@ -138,15 +140,11 @@ export default function CreateSurvey() {
       {waiting ? <Waiting /> : null}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold mb-6">
-          {t(
-            surveyId === 'new'
-              ? translations.actions.create
-              : translations.actions.edit
-          )}{' '}
+          {t(isNew ? translations.actions.create : translations.actions.edit)}{' '}
           {t(translations.survey)}
         </h1>
         <div>
-          {surveyId !== 'new' ? (
+          {!isNew ? (
             <Button
               className="mr-4"
               onClick={() => {
