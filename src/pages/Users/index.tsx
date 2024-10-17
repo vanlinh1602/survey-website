@@ -62,7 +62,14 @@ export default function UserManagement() {
   return (
     <div className="container mx-auto p-4">
       {handling ? <Waiting /> : null}
-      <Dialog open={!!newUser}>
+      <Dialog
+        open={!!newUser}
+        onOpenChange={(open) => {
+          if (!open) {
+            setNewUser(undefined);
+          }
+        }}
+      >
         <DialogTrigger asChild>
           <Button
             onClick={() => {
