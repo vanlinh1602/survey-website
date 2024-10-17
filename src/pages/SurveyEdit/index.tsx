@@ -405,11 +405,9 @@ export default function CreateSurvey() {
                           size="sm"
                           onClick={() => {
                             const wb = XLSX.utils.book_new();
-                            const ws = XLSX.utils.json_to_sheet([
-                              {
-                                'Cột phương án': '',
-                              },
-                            ]);
+                            const ws = XLSX.utils.json_to_sheet([], {
+                              header: ['Cột phương án'],
+                            });
                             XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
                             XLSX.writeFile(wb, 'file_mẫu_nhập.xlsx');
                           }}
