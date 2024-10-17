@@ -382,11 +382,18 @@ export default function CreateSurvey() {
                               const wb = XLSX.read(content, { type: 'binary' });
                               const ws = wb.Sheets[wb.SheetNames[0]];
                               const data = XLSX.utils.sheet_to_json(ws);
-                              const params: string[] = data.map(
-                                (d: any) => d['Cột phương án']
-                              );
+                              const params: string[] = data
+                                .map((d: any) => d['Cột phương án'])
+                                .filter((d: any) => !!d);
                               if (params.length) {
                                 updateQuestion([keyIndex, 'params'], params);
+                              } else {
+                                toast({
+                                  title: 'Lỗi',
+                                  description:
+                                    'File không có dữ liệu hoặc không đúng định dạng. Vui lòng kiểm tra lại',
+                                  variant: 'destructive',
+                                });
                               }
                             };
                             reader.readAsBinaryString(files[0]);
