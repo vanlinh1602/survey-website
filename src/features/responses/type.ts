@@ -3,4 +3,5 @@ export type Response = {
   surveyId: string;
   user?: string;
   answers: CustomObject<string | string[] | string[][]>;
+  createdAt: number;
 };

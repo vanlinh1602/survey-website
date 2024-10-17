@@ -27,7 +27,6 @@ import { ResponseDetail } from '@/features/responses/components';
 import { Response } from '@/features/responses/type';
 import { getSurvey } from '@/features/surveys/api';
 import { Survey } from '@/features/surveys/type';
-import { objectId2Date } from '@/lib/utils';
 
 // const data = [
 //   { name: 'Strongly Disagree', value: 10 },
@@ -241,7 +240,7 @@ export default function ViewResults() {
                     {respondent.user || `Người thứ ${i + 1}`}
                   </TableCell>
                   <TableCell>
-                    {moment(objectId2Date(respondent.id)).format('DD/MM/YYYY')}
+                    {moment(respondent.createdAt).format('DD/MM/YYYY')}
                   </TableCell>
                   <TableCell>
                     {Object.keys(respondent.answers).length}

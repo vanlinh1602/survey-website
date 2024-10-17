@@ -15,7 +15,10 @@ export class ResponsesService {
 
   static async createResponse(responses: ResponsesService): Promise<string> {
     const docRef = collection(firestore, 'responses');
-    await addDoc(docRef, responses);
+    await addDoc(docRef, {
+      ...responses,
+      createdAt: Date.now(),
+    });
     return docRef.id;
   }
 }
