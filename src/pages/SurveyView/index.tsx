@@ -186,6 +186,7 @@ export default function SurveyView() {
               {question.type === 'questionGroup' ? (
                 <div className="flex justify-end">
                   <Button
+                    size="sm"
                     variant="secondary"
                     onClick={() =>
                       hanleQuestionGroupChange(
