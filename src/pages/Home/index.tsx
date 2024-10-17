@@ -1,4 +1,3 @@
-import Parser from 'html-react-parser';
 import { PlusCircle } from 'lucide-react';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
@@ -60,8 +59,10 @@ export default function Component() {
         {surveys.map((survey) => (
           <Card key={survey.id}>
             <CardHeader>
-              <CardTitle className="max-h-12 h-12 overflow-hidden overflow-ellipsis">
-                <div className="!text-start">{Parser(survey.title)}</div>
+              <CardTitle>
+                <div className="!text-start line-clamp-1 overflow-ellipsis">
+                  {survey.title}
+                </div>
               </CardTitle>
               <CardDescription>
                 {survey.lasted?.time

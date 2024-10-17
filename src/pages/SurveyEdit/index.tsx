@@ -212,36 +212,7 @@ export default function CreateSurvey() {
                 <FormItem>
                   <FormLabel>Tiêu đề</FormLabel>
                   <FormControl>
-                    <BundledEditor
-                      initialValue={field.value}
-                      onChange={(_e, editor) => {
-                        const content = editor.getContent();
-                        field.onChange(content);
-                      }}
-                      init={{
-                        height: 150,
-                        menubar: false,
-                        plugins: [
-                          'advlist',
-                          'anchor',
-                          'autolink',
-                          'help',
-                          'image',
-                          'link',
-                          'lists',
-                          'searchreplace',
-                          'table',
-                          'wordcount',
-                        ],
-                        toolbar:
-                          'undo redo | blocks | ' +
-                          'bold italic forecolor | alignleft aligncenter ' +
-                          'alignright alignjustify | bullist numlist outdent indent | ' +
-                          'removeformat | help',
-                        content_style:
-                          'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                      }}
-                    />
+                    <Input {...field} placeholder="Nhập tiêu đề" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

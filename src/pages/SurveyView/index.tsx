@@ -151,7 +151,10 @@ export default function SurveyView() {
     <div className="container mx-auto max-w-3xl">
       {loading ? <Waiting /> : null}
       <div className="flex flex-col items-center mb-3">
-        {Parser(surveyData?.title ?? '')}
+        <p className="text-center">UBND TỈNH KIÊN GIANG</p>
+        <p className="text-center">
+          <strong>SỞ GIÁO DỤC VÀ ĐÀO TẠO</strong>
+        </p>
         <img
           src={sgdLogo}
           alt="survey"
