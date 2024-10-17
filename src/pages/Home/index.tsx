@@ -1,8 +1,9 @@
 import { PlusCircle } from 'lucide-react';
 import moment from 'moment';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { useShallow } from 'zustand/shallow';
 
 import { Waiting } from '@/components';
 import { Button } from '@/components/ui/button';
@@ -14,34 +15,32 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { querySurveys } from '@/features/surveys/api';
-import { Survey } from '@/features/surveys/type';
+import { useSurveyStore } from '@/features/surveys/hooks';
 import { generateID } from '@/lib/utils';
 import { translations } from '@/locales/translations';
 
 export default function Component() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [surveys, setSurveys] = useState<Survey[]>([]);
-  const [waiting, setWaiting] = useState(false);
 
-  const fetchSurveys = async () => {
-    setWaiting(true);
-    try {
-      const result = await querySurveys();
-      setSurveys(result);
-    } finally {
-      setWaiting(false);
-    }
-  };
+  const { querySurveys, surveys, handling } = useSurveyStore(
+    useShallow((state) => ({
+      surveys: state.surveys,
+      handling: state.handling,
+      querySurveys: state.querySurveys,
+    }))
+  );
 
   useEffect(() => {
-    fetchSurveys();
-  }, []);
+    if (!surveys) {
+      querySurveys();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [querySurveys]);
 
   return (
     <>
-      {waiting ? <Waiting /> : null}
+      {handling ? <Waiting /> : null}
       <div className="flex justify-end items-center mb-6">
         <Button
           onClick={() => {
@@ -56,7 +55,7 @@ export default function Component() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Sample Survey Cards */}
-        {surveys.map((survey) => (
+        {Object.values(surveys ?? {}).map((survey) => (
           <Card key={survey.id}>
             <CardHeader>
               <CardTitle>

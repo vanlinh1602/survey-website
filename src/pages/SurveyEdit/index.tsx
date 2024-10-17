@@ -5,9 +5,11 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 import { z } from 'zod';
+import { useShallow } from 'zustand/shallow';
 
-import { BundledEditor, Waiting } from '@/components';
+import { BundledEditor, DropzoneModal, Waiting } from '@/components';
 import { useToast } from '@/components/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -33,10 +36,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { createSurvey, getSurvey, updateSurvey } from '@/features/surveys/api';
+import { useSurveyStore } from '@/features/surveys/hooks';
 import { Question } from '@/features/surveys/type';
-import { generateID } from '@/lib/utils';
 import { translations } from '@/locales/translations';
+import formatError from '@/utils/formatError';
 
 export default function CreateSurvey() {
   const { toast } = useToast();
@@ -45,23 +48,28 @@ export default function CreateSurvey() {
   const location = useLocation();
   const isNew = location.state?.isNew || false;
   const { t } = useTranslation();
-  const [questions, setQuestions] = useState<CustomObject<Question>>({});
-  const [waiting, setWaiting] = useState(false);
+  const [questions, setQuestions] = useState<Question[]>([]);
 
-  const updateQuestion = (
-    id: string,
-    path: (string | number)[],
-    value: string
-  ) => {
+  const { survey, getSurvey, handling, createSurvey, updateSurvey } =
+    useSurveyStore(
+      useShallow((state) => ({
+        survey: state.surveys?.[surveyId!],
+        getSurvey: state.getSurveys,
+        handling: state.handling,
+        createSurvey: state.createSurvey,
+        updateSurvey: state.updateSurvey,
+      }))
+    );
+
+  const updateQuestion = (path: (string | number)[], value: any) => {
     setQuestions((pre) => {
       const updated = _.cloneDeep(pre);
-      _.set(updated, [id, ...path], value);
+      _.set(updated, path, value);
       return updated;
     });
   };
 
   const formSchema = z.object({
-    logo: z.string().optional(),
     title: z.string(),
     description: z.string(),
   });
@@ -74,32 +82,24 @@ export default function CreateSurvey() {
     },
   });
 
-  const initData = async () => {
-    setWaiting(true);
-    try {
-      const result = await getSurvey(surveyId || '');
-      if (result) {
-        form.reset({
-          title: result.title,
-          description: result.description,
-          logo: result.logo,
-        });
-        setQuestions(result.questions);
-      }
-    } finally {
-      setWaiting(false);
-    }
-  };
-
   useEffect(() => {
-    if (!isNew) {
-      initData();
+    if (!isNew && !survey) {
+      getSurvey(surveyId!);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [surveyId]);
 
+  useEffect(() => {
+    if (survey) {
+      form.reset({
+        title: survey.title,
+        description: survey.description,
+      });
+      setQuestions(survey.questions || []);
+    }
+  }, [form, survey]);
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    setWaiting(true);
     try {
       if (isNew) {
         const data = {
@@ -110,10 +110,8 @@ export default function CreateSurvey() {
           },
           id: surveyId!,
         };
-        const result = await createSurvey(data);
-        if (result) {
-          navigate(`/survey/${result}`);
-        }
+        await createSurvey(data);
+        navigate(`/survey/${surveyId}`);
       } else {
         const data = {
           ...values,
@@ -122,22 +120,24 @@ export default function CreateSurvey() {
             time: Date.now(),
           },
         };
-        const result = await updateSurvey(surveyId!, data);
-        if (result) {
-          toast({
-            title: 'Success',
-            description: 'Survey updated successfully',
-          });
-        }
+        await updateSurvey(surveyId!, { id: surveyId!, ...data });
+        toast({
+          title: 'Success',
+          description: 'Survey updated successfully',
+        });
       }
-    } finally {
-      setWaiting(false);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: formatError(error),
+        variant: 'destructive',
+      });
     }
   };
 
   return (
     <div className="container mx-auto">
-      {waiting ? <Waiting /> : null}
+      {handling ? <Waiting /> : null}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold mb-6">
           {t(isNew ? translations.actions.create : translations.actions.edit)}{' '}
@@ -271,20 +271,20 @@ export default function CreateSurvey() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {Object.entries(questions).map(([key, question], index) => (
-              <Card key={`question-${key}`}>
+            {questions.map((question, keyIndex) => (
+              <Card key={`question-${keyIndex}`}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
-                    Question {index + 1}
+                    Question {keyIndex + 1}
                   </CardTitle>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => {
                       setQuestions((pre) => {
-                        const updated = { ...pre };
-                        _.unset(updated, key);
-                        return updated;
+                        return pre.filter((_q, index) => {
+                          return index !== keyIndex;
+                        });
                       });
                     }}
                   >
@@ -292,11 +292,26 @@ export default function CreateSurvey() {
                   </Button>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <div className="text-sm">Loại câu hỏi</div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`question-${keyIndex}-require`}
+                      checked={question.required || false}
+                      onCheckedChange={(checked) => {
+                        updateQuestion([keyIndex, 'required'], checked);
+                      }}
+                    />
+                    <label htmlFor="terms" className="text-sm">
+                      Bắc buộc
+                    </label>
+                  </div>
+                  <div className="text-sm font-medium">Loại câu hỏi</div>
                   <Select
                     value={question.type}
                     onValueChange={(value) =>
-                      updateQuestion(key, ['type'], value)
+                      updateQuestion([keyIndex], {
+                        type: value,
+                        text: '',
+                      })
                     }
                   >
                     <SelectTrigger>
@@ -312,29 +327,27 @@ export default function CreateSurvey() {
                       )}
                     </SelectContent>
                   </Select>
-                  <div className="text-sm">Nhập câu hỏi</div>
+                  <div className="text-sm font-medium">Nhập câu hỏi</div>
                   <Input
                     placeholder="Enter question text"
                     value={question.text}
                     onChange={(e) =>
-                      updateQuestion(key, ['text'], e.target.value)
+                      updateQuestion([keyIndex, 'text'], e.target.value)
                     }
                   />
                   {(question.type === 'radio' ||
                     question.type === 'select' ||
                     question.type === 'checkbox') && (
                     <div className="space-y-2">
-                      <div className="text-sm">Nhập phương án</div>
-
+                      <div className="text-sm font-medium">Nhập phương án</div>
                       {question?.params?.map((paramValue, paramIndex) => (
                         <Input
-                          key={`param-${key}-${paramIndex}`}
+                          key={`param-${keyIndex}-${paramIndex}`}
                           placeholder={`Option ${paramIndex + 1}`}
                           value={paramValue}
                           onChange={(e) => {
                             updateQuestion(
-                              key,
-                              ['params', paramIndex],
+                              [keyIndex, 'params', paramIndex],
                               e.target.value
                             );
                           }}
@@ -344,10 +357,14 @@ export default function CreateSurvey() {
                         <Button
                           variant="outline"
                           size="sm"
+                          className="mr-2"
                           onClick={() => {
                             updateQuestion(
-                              key,
-                              ['params', question.params?.length || 0],
+                              [
+                                keyIndex,
+                                'params',
+                                question.params?.length || 0,
+                              ],
                               ''
                             );
                           }}
@@ -355,51 +372,99 @@ export default function CreateSurvey() {
                           Thêm phương án
                         </Button>
 
-                        {/* <DropzoneModal
+                        <DropzoneModal
                           content="Import Phương án"
+                          accept={{ 'xlsx, xls': ['.xlsx', '.xls'] }}
                           onSubmit={(files) => {
                             const reader = new FileReader();
                             reader.onload = () => {
                               const content = reader.result as string;
+                              const wb = XLSX.read(content, { type: 'binary' });
+                              const ws = wb.Sheets[wb.SheetNames[0]];
+                              const data = XLSX.utils.sheet_to_json(ws);
+                              const params: string[] = data.map(
+                                (d: any) => d['Cột phương án']
+                              );
+                              if (params.length) {
+                                updateQuestion([keyIndex, 'params'], params);
+                              }
                             };
                             reader.readAsBinaryString(files[0]);
                           }}
-                        /> */}
+                        />
+                        <Button
+                          variant="outline"
+                          className="ml-2"
+                          size="sm"
+                          onClick={() => {
+                            const wb = XLSX.utils.book_new();
+                            const ws = XLSX.utils.json_to_sheet([
+                              {
+                                'Cột phương án': '',
+                              },
+                            ]);
+                            XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+                            XLSX.writeFile(wb, 'file_mẫu_nhập.xlsx');
+                          }}
+                        >
+                          Tải file nhập mẫu
+                        </Button>
                       </div>
                     </div>
                   )}
                   {question.type === 'questionGroup' && (
                     <div className="space-y-2">
-                      <div className="text-sm">Nhập câu hỏi phụ</div>
+                      <div className="text-sm font-medium">
+                        Nhập câu hỏi phụ
+                      </div>
                       {question?.subQuestions?.map((paramValue, paramIndex) => (
-                        <div className="flex space-x-3">
-                          <Input
-                            key={`param-${key}-${paramIndex}`}
-                            placeholder={`Câu hỏi phụ ${paramIndex + 1}`}
-                            value={paramValue.content}
-                            onChange={(e) => {
-                              updateQuestion(
-                                key,
-                                ['subQuestions', paramIndex, 'content'],
-                                e.target.value
-                              );
-                            }}
-                          />
-
-                          <Input
-                            key={`param-${key}-${paramIndex}`}
-                            placeholder={`Text mẫu hiện trong ô nhập ${
-                              paramIndex + 1
-                            }`}
-                            value={paramValue.placeholder}
-                            onChange={(e) => {
-                              updateQuestion(
-                                key,
-                                ['subQuestions', paramIndex, 'placeholder'],
-                                e.target.value
-                              );
-                            }}
-                          />
+                        <div className="grid grid-cols-2 space-x-3">
+                          <div>
+                            <div className="text-sm mb-2">
+                              Câu hỏi phụ {paramIndex + 1}
+                            </div>
+                            <div>
+                              <Input
+                                key={`param-${keyIndex}-${paramIndex}`}
+                                placeholder={`Câu hỏi phụ ${paramIndex + 1}`}
+                                value={paramValue.content}
+                                onChange={(e) => {
+                                  updateQuestion(
+                                    [
+                                      keyIndex,
+                                      'subQuestions',
+                                      paramIndex,
+                                      'content',
+                                    ],
+                                    e.target.value
+                                  );
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-sm mb-2">
+                              Placeholder cho câu {paramIndex + 1}
+                            </div>
+                            <Input
+                              key={`param-${keyIndex}-${paramIndex}`}
+                              placeholder={`Text mẫu hiện trong ô nhập ${
+                                paramIndex + 1
+                              }`}
+                              value={paramValue.placeholder}
+                              onChange={(e) => {
+                                updateQuestion(
+                                  [
+                                    keyIndex,
+                                    'subQuestions',
+                                    paramIndex,
+                                    'placeholder',
+                                  ],
+                                  e.target.value
+                                );
+                              }}
+                            />
+                          </div>
                         </div>
                       ))}
                       <div>
@@ -408,8 +473,8 @@ export default function CreateSurvey() {
                           size="sm"
                           onClick={() => {
                             updateQuestion(
-                              key,
                               [
+                                keyIndex,
                                 'subQuestions',
                                 question.subQuestions?.length || 0,
                                 'content',
@@ -428,13 +493,7 @@ export default function CreateSurvey() {
             ))}
             <Button
               onClick={() => {
-                setQuestions((pre) => ({
-                  ...pre,
-                  [generateID()]: {
-                    type: 'input',
-                    text: '',
-                  },
-                }));
+                setQuestions((pre) => [...pre, { type: 'input', text: '' }]);
               }}
             >
               <PlusCircle className="mr-2 h-4 w-4" /> Add Question

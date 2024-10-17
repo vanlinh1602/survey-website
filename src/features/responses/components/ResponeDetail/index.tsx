@@ -75,11 +75,16 @@ const ResponseDetail = ({ onClose, survey, responses }: Props) => {
           </button>
         </div>
         <div>
-          {Object.entries(responses.answers).map(([questionId, response]) => (
-            <div className="w-full pb-2 border-2 rounded-lg my-2 p-2">
-              {getTextRespone(survey.questions?.[questionId], response)}
-            </div>
-          ))}
+          {Object.entries(JSON.parse(responses.answers || '{}')).map(
+            ([questionId, response]) => (
+              <div className="w-full pb-2 border-2 rounded-lg my-2 p-2">
+                {getTextRespone(
+                  _.get(survey.questions, [questionId]),
+                  response
+                )}
+              </div>
+            )
+          )}
         </div>
       </div>
     </div>

@@ -12,11 +12,22 @@ export type Question = {
 
 export type Survey = {
   id: string;
-  logo?: string;
   title: string;
   description: string;
-  questions: CustomObject<Question>;
+  questions: Question[];
   lasted?: {
     time: number;
   };
+};
+
+export type SurveyStoreState = {
+  handling: boolean;
+  surveys?: CustomObject<Survey>;
+};
+
+export type SurveyStoreAction = {
+  getSurveys: (id: string) => Promise<void>;
+  querySurveys: () => Promise<void>;
+  createSurvey: (data: Survey) => Promise<void>;
+  updateSurvey: (id: string, data: Survey) => Promise<void>;
 };

@@ -5,6 +5,7 @@ import _ from 'lodash';
 import { AlertCircle, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useShallow } from 'zustand/shallow';
 
 import sgdLogo from '@/assets/sgd_kien_giang.jpg';
 import { SearchableSelect, Waiting } from '@/components';
@@ -23,8 +24,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { createResponse } from '@/features/responses/api';
-import { getSurvey } from '@/features/surveys/api';
-import type { Survey } from '@/features/surveys/type';
+import { useSurveyStore } from '@/features/surveys/hooks';
 import formatError from '@/utils/formatError';
 
 export default function SurveyView() {
@@ -34,24 +34,20 @@ export default function SurveyView() {
     CustomObject<string | string[] | string[][]>
   >({});
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [surveyData, setSurveyData] = useState<Survey>();
   const [loading, setLoading] = useState(false);
   const [isSent, setIsSent] = useState(false);
 
-  const fetchSurvey = async () => {
-    try {
-      setLoading(true);
-      const result = await getSurvey(id || '');
-      if (result) {
-        setSurveyData(result);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { surveyData, getSurvey } = useSurveyStore(
+    useShallow((state) => ({
+      getSurvey: state.getSurveys,
+      surveyData: state.surveys?.[id!],
+    }))
+  );
 
   useEffect(() => {
-    fetchSurvey();
+    if (!surveyData) {
+      getSurvey(id!);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -113,11 +109,16 @@ export default function SurveyView() {
     setLoading(true);
     try {
       if (!checkValidation()) {
+        toast({
+          title: 'Thiếu thông tin',
+          description: 'Có thông tin bị thiếu vui lòng kiểm tra lại',
+          variant: 'destructive',
+        });
         return;
       }
       const data = {
         surveyId: id,
-        answers: responses,
+        answers: JSON.stringify(responses),
       };
       const result = await createResponse(data);
       if (result.id) {
@@ -203,7 +204,7 @@ export default function SurveyView() {
                 <Input
                   value={(responses[questionId] as string) || ''}
                   onChange={(e) => handleTextChange(questionId, e.target.value)}
-                  placeholder="Enter your answer"
+                  placeholder="Nhập câu trả lời của bạn"
                 />
               )}
               {question.type === 'radio' && (

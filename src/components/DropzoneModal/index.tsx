@@ -1,6 +1,6 @@
 import { Upload } from 'lucide-react';
 import { useCallback, useState } from 'react';
-import { useDropzone } from 'react-dropzone';
+import { Accept, useDropzone } from 'react-dropzone';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -15,9 +15,10 @@ import {
 type Props = {
   content: string;
   onSubmit: (files: File[]) => void;
+  accept?: Accept;
 };
 
-export default function DropzoneModal({ content, onSubmit }: Props) {
+export default function DropzoneModal({ content, onSubmit, accept }: Props) {
   const [open, setOpen] = useState(false);
 
   const onDrop = useCallback(
@@ -28,12 +29,17 @@ export default function DropzoneModal({ content, onSubmit }: Props) {
     [onSubmit]
   );
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept,
+  });
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">{content}</Button>
+        <Button size="sm" variant="outline">
+          {content}
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

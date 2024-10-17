@@ -4,6 +4,7 @@ import moment from 'moment';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import * as XLSX from 'xlsx';
+import { useShallow } from 'zustand/shallow';
 
 import { Waiting } from '@/components';
 import { toast } from '@/components/hooks/use-toast';
@@ -25,30 +26,27 @@ import {
 import { getResponses } from '@/features/responses/api';
 import { ResponseDetail } from '@/features/responses/components';
 import { Response } from '@/features/responses/type';
-import { getSurvey } from '@/features/surveys/api';
-import { Survey } from '@/features/surveys/type';
-
-// const data = [
-//   { name: 'Strongly Disagree', value: 10 },
-//   { name: 'Disagree', value: 20 },
-//   { name: 'Neutral', value: 30 },
-//   { name: 'Agree', value: 25 },
-//   { name: 'Strongly Agree', value: 15 },
-// ];
+import { useSurveyStore } from '@/features/surveys/hooks';
+import { Question, Survey } from '@/features/surveys/type';
 
 export default function ViewResults() {
   const { id: surveyId } = useParams<{ id: string }>();
-  const [survey, setSurvey] = useState<Survey>();
   const [responses, setResponses] = useState<Response[]>([]);
   const [waiting, setWaiting] = useState(false);
   const [showDetail, setShowDetail] = useState<Response>();
 
+  const { survey, getSurvey } = useSurveyStore(
+    useShallow((state) => ({
+      getSurvey: state.getSurveys,
+      survey: state.surveys?.[surveyId!],
+    }))
+  );
+
   const fetchData = async () => {
     setWaiting(true);
     try {
-      const surveyResult = await getSurvey(surveyId || '');
-      if (surveyResult) {
-        setSurvey(surveyResult);
+      if (!survey) {
+        getSurvey(surveyId || '');
       }
       const responseResult = await getResponses(surveyId || '');
       setResponses(responseResult);
@@ -83,19 +81,17 @@ export default function ViewResults() {
     const result: CustomObject<string>[] = [];
     responses.forEach((response) => {
       const tmp: CustomObject<string>[] = [];
-      Object.entries(response.answers).forEach(([key, value]) => {
-        switch (survey?.questions[key].type) {
+      const answersParsed = JSON.parse(response.answers);
+      Object.entries(answersParsed).forEach(([key, value]) => {
+        const question: Question = _.get(survey?.questions, [key]);
+        switch (question.type) {
           case 'input': {
             _.set(tmp, [0, key], value);
             break;
           }
           case 'radio':
           case 'select': {
-            _.set(
-              tmp,
-              [0, key],
-              _.get(survey?.questions[key].params, [value as string], '')
-            );
+            _.set(tmp, [0, key], _.get(question.params, [value as string], ''));
             break;
           }
           case 'questionGroup': {
@@ -111,7 +107,7 @@ export default function ViewResults() {
               tmp,
               [0, key],
               (value as string[])
-                .map((v) => _.get(survey?.questions[key].params, [v], ''))
+                .map((v) => _.get(question.params, [v], ''))
                 .join(', ')
             );
             break;
@@ -128,7 +124,7 @@ export default function ViewResults() {
     });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Responses');
-    XLSX.writeFile(wb, 'survey_responses.xlsx');
+    XLSX.writeFile(wb, 'thống_kê_khảo_sát.xlsx');
   };
 
   return (
@@ -153,14 +149,13 @@ export default function ViewResults() {
               <h3 className="text-2xl font-bold">{responses.length}</h3>
               <p className="text-muted-foreground">Total Responses</p>
             </div>
-            <div
-              className="text-center flex items-center flex-col cursor-pointer"
-              onClick={exportExcel}
-            >
-              <h3 className="text-2xl font-bold">
-                <SheetIcon className="text-center" />
-              </h3>
-              <p className="text-muted-foreground">Xuất Excel</p>
+            <div className="flex items-center justify-center flex-col">
+              <div className="text-center cursor-pointer" onClick={exportExcel}>
+                <h3 className="text-2xl font-bold text-center flex justify-center">
+                  <SheetIcon className="text-center" />
+                </h3>
+                <p className="text-muted-foreground">Xuất Excel</p>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -243,7 +238,7 @@ export default function ViewResults() {
                     {moment(respondent.createdAt).format('DD/MM/YYYY')}
                   </TableCell>
                   <TableCell>
-                    {Object.keys(respondent.answers).length}
+                    {Object.keys(JSON.parse(respondent.answers)).length}
                   </TableCell>
                   <TableCell>
                     <button
