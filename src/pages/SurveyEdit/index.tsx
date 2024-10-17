@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { z } from 'zod';
 
-import { BundledEditor, DropzoneModal, Waiting } from '@/components';
+import { BundledEditor, Waiting } from '@/components';
 import { useToast } from '@/components/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -168,7 +168,7 @@ export default function CreateSurvey() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <FormField
+            {/* <FormField
               control={form.control}
               name="logo"
               render={({ field }) => (
@@ -206,7 +206,7 @@ export default function CreateSurvey() {
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            /> */}
             <FormField
               control={form.control}
               name="title"
