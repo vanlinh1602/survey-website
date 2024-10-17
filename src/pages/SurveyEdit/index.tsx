@@ -112,7 +112,7 @@ export default function CreateSurvey() {
         };
         const result = await createSurvey(data);
         if (result) {
-          navigate(`/${result}`);
+          navigate(`/survey/${result}`);
         }
       } else {
         const data = {
