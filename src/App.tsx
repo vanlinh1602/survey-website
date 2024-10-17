@@ -24,6 +24,7 @@ const SurveyEditPage = lazy(() => import('./pages/SurveyEdit'));
 const SurveyResultPage = lazy(() => import('./pages/SurveyResult'));
 const SurveyViewPage = lazy(() => import('./pages/SurveyView'));
 const LoginPage = lazy(() => import('./pages/Login'));
+const UsersPage = lazy(() => import('./pages/Users'));
 
 const AppLayout = () => (
   <Suspense>
@@ -61,14 +62,19 @@ function App() {
         <Route path="/" element={<AuthorizedRoute />}>
           <Route path="" element={<HomePage />} />
         </Route>
-        <Route path="/:id" element={<Outlet />}>
-          <Route path="edit" element={<AuthorizedRoute />}>
-            <Route path="" element={<SurveyEditPage />} />
+        <Route path="users" element={<AuthorizedRoute />}>
+          <Route path="" element={<UsersPage />} />
+        </Route>
+        <Route path="survey" element={<Outlet />}>
+          <Route path=":id" element={<Outlet />}>
+            <Route path="edit" element={<AuthorizedRoute />}>
+              <Route path="" element={<SurveyEditPage />} />
+            </Route>
+            <Route path="results" element={<AuthorizedRoute />}>
+              <Route path="" element={<SurveyResultPage />} />
+            </Route>
+            <Route path="" element={<SurveyViewPage />} />
           </Route>
-          <Route path="results" element={<AuthorizedRoute />}>
-            <Route path="" element={<SurveyResultPage />} />
-          </Route>
-          <Route path="" element={<SurveyViewPage />} />
         </Route>
         <Route path="login" element={<LoginPage />} />
         <Route path="*" element={<div>Not Found</div>} />

@@ -1,20 +1,13 @@
 import { toast } from '@/components/hooks/use-toast';
-import { backendService } from '@/services';
+import { SurveysService } from '@/services/surveys';
 import formatError from '@/utils/formatError';
 
 import { Survey } from '../type';
 
 export const getSurvey = async (id: string): Promise<Survey | null> => {
   try {
-    const result: WithApiResult<Survey> = await backendService.post(
-      '/surveys/get',
-      { id }
-    );
-    if (result.kind === 'ok') {
-      return result.data;
-    } else {
-      throw new Error(formatError(result));
-    }
+    const result = await SurveysService.getSurvey(id);
+    return result;
   } catch (error) {
     toast({
       title: 'Error',
@@ -27,14 +20,8 @@ export const getSurvey = async (id: string): Promise<Survey | null> => {
 
 export const querySurveys = async (): Promise<Survey[]> => {
   try {
-    const result: WithApiResult<Survey[]> = await backendService.post(
-      '/surveys/query'
-    );
-    if (result.kind === 'ok') {
-      return result.data;
-    } else {
-      throw new Error(formatError(result));
-    }
+    const result = await SurveysService.querySurveys();
+    return result;
   } catch (error) {
     toast({
       title: 'Error',
@@ -47,21 +34,8 @@ export const querySurveys = async (): Promise<Survey[]> => {
 
 export const createSurvey = async (survey: Survey): Promise<string> => {
   try {
-    const { id, ...data } = survey;
-    const result: WithApiResult<{ id: string }> = await backendService.post(
-      '/surveys/create',
-      {
-        data: {
-          ...data,
-          _id: id,
-        },
-      }
-    );
-    if (result.kind === 'ok') {
-      return result.data.id;
-    } else {
-      throw new Error(formatError(result));
-    }
+    await SurveysService.createSurvey(survey);
+    return survey.id;
   } catch (error) {
     toast({
       title: 'Error',
@@ -77,18 +51,8 @@ export const updateSurvey = async (
   data: Partial<Survey>
 ): Promise<boolean> => {
   try {
-    const result: WithApiResult<boolean> = await backendService.post(
-      '/surveys/update',
-      {
-        id,
-        data,
-      }
-    );
-    if (result.kind === 'ok') {
-      return result.data;
-    } else {
-      throw new Error(formatError(result));
-    }
+    await SurveysService.updateSurvey(id, data);
+    return true;
   } catch (error) {
     toast({
       title: 'Error',

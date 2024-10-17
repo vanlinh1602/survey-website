@@ -1,4 +1,4 @@
-import { LayoutDashboard, LogOut } from 'lucide-react';
+import { LayoutDashboard, LogOut, User } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -30,7 +30,7 @@ const Header = () => {
   }, [location.pathname]);
 
   if (
-    (splitPath.length === 2 && splitPath[1] !== '') ||
+    (activeKey === 'survey' && splitPath.length === 3) ||
     activeKey === 'login'
   ) {
     return null;
@@ -65,9 +65,9 @@ const Header = () => {
                 {t(translations.pages.home)}
               </div>
             </div>
-            {/* <div
+            <div
               id="match-header"
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/users')}
               className="text-base font-medium text-gray-500 hover:text-gray-900 cursor-pointer"
             >
               <div
@@ -78,7 +78,7 @@ const Header = () => {
                 <User className="inline-block mr-2 h-5 w-5" />
                 {t(translations.pages.user)}
               </div>
-            </div> */}
+            </div>
           </nav>
 
           <div className="flex justify-end items-center">

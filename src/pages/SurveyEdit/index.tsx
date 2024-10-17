@@ -150,7 +150,7 @@ export default function CreateSurvey() {
             <Button
               className="mr-4"
               onClick={() => {
-                navigate(`/${surveyId}`);
+                navigate(`/survey/${surveyId}`);
               }}
             >
               Xem trước

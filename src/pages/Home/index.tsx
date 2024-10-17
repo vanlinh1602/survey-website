@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/card';
 import { querySurveys } from '@/features/surveys/api';
 import { Survey } from '@/features/surveys/type';
+import { generateID } from '@/lib/utils';
 import { translations } from '@/locales/translations';
 
 export default function Component() {
@@ -45,7 +46,7 @@ export default function Component() {
       <div className="flex justify-end items-center mb-6">
         <Button
           onClick={() => {
-            navigate('/new/edit');
+            navigate(`survey/${generateID()}/edit`, { state: { isNew: true } });
           }}
         >
           <PlusCircle className="mr-2 h-4 w-4" />
@@ -76,11 +77,11 @@ export default function Component() {
             <CardFooter className="flex justify-between">
               <Button
                 variant="outline"
-                onClick={() => navigate(`/${survey.id}/edit`)}
+                onClick={() => navigate(`survey/${survey.id}/edit`)}
               >
                 Chỉnh sửa
               </Button>
-              <Button onClick={() => navigate(`/${survey.id}/results`)}>
+              <Button onClick={() => navigate(`survey/${survey.id}/results`)}>
                 Xem kết quả
               </Button>
             </CardFooter>

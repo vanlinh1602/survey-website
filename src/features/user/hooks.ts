@@ -1,11 +1,14 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
+import { UsersService } from '@/services/users';
+
 import { login, signOut } from './api';
-import { UserStoreActions, UserStoreState } from './type';
+import { User, UserStoreActions, UserStoreState } from './type';
 
 const initialState: UserStoreState = {
   handling: false,
+  users: {},
 };
 
 export const useUserStore = create<UserStoreState & UserStoreActions>()(
@@ -31,9 +34,87 @@ export const useUserStore = create<UserStoreState & UserStoreActions>()(
       );
     },
     logout: async () => {
-      set(() => ({ handling: true }), false, { type: 'user/logout' });
+      set(() => ({ handling: true }), false, {
+        type: 'user/logout',
+      });
       await signOut();
+      set(() => ({ handling: false, information: undefined }), false, {
+        type: 'user/logout',
+      });
       window.location.reload();
+    },
+    addUser: async (email: string, userInfo: Partial<User>) => {
+      set(
+        () => ({
+          handling: true,
+        }),
+        false,
+        { type: 'user/addUser', email, userInfo }
+      );
+      await UsersService.createUser(email, userInfo);
+      set(
+        (state) => ({
+          handling: false,
+          users: {
+            ...state.users,
+            [email]: {
+              uid: userInfo.uid || '',
+              email,
+              avatar: userInfo.avatar || '',
+              displayName: userInfo.displayName || '',
+            },
+          },
+        }),
+        false,
+        {
+          type: 'user/addUser',
+          email,
+          userInfo,
+        }
+      );
+    },
+    deleteUser: async (email: string) => {
+      set(
+        () => ({
+          handling: true,
+        }),
+        false,
+        { type: 'user/deleteUser', email }
+      );
+      await UsersService.deleteUser(email);
+      set(
+        (state) => {
+          const users = { ...state.users };
+          delete users[email];
+          return {
+            handling: false,
+            users,
+          };
+        },
+        false,
+        { type: 'user/deleteUser', email }
+      );
+    },
+    getUsers: async () => {
+      set(
+        () => ({
+          handling: true,
+        }),
+        false,
+        { type: 'user/getUsers' }
+      );
+      const users = await UsersService.queryUsers();
+      set(
+        () => ({
+          handling: false,
+          users: users.reduce((acc, user) => {
+            acc[user.email] = user;
+            return acc;
+          }, {} as Record<string, User>),
+        }),
+        false,
+        { type: 'user/getUsers' }
+      );
     },
   }))
 );
