@@ -30,4 +30,5 @@ export type SurveyStoreAction = {
   querySurveys: () => Promise<void>;
   createSurvey: (data: Survey) => Promise<void>;
   updateSurvey: (id: string, data: Survey) => Promise<void>;
+  deleteSurvey: (id: string) => Promise<void>;
 };

@@ -1,4 +1,5 @@
 import { toast } from '@/components/hooks/use-toast';
+import { ResponsesService } from '@/services/responses';
 import { SurveysService } from '@/services/surveys';
 import formatError from '@/utils/formatError';
 
@@ -52,6 +53,21 @@ export const updateSurvey = async (
 ): Promise<boolean> => {
   try {
     await SurveysService.updateSurvey(id, data);
+    return true;
+  } catch (error) {
+    toast({
+      title: 'Error',
+      description: formatError(error),
+      variant: 'destructive',
+    });
+    return false;
+  }
+};
+
+export const deleteSurvey = async (id: string): Promise<boolean> => {
+  try {
+    await SurveysService.deleteSurvey(id);
+    await ResponsesService.deleteResponses(id);
     return true;
   } catch (error) {
     toast({

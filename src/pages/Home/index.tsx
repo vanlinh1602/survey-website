@@ -1,11 +1,12 @@
-import { PlusCircle } from 'lucide-react';
+import { CheckCheck, CopyIcon, EditIcon, PlusCircle } from 'lucide-react';
 import moment from 'moment';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useShallow } from 'zustand/shallow';
 
 import { Waiting } from '@/components';
+import { toast } from '@/components/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -22,6 +23,7 @@ import { translations } from '@/locales/translations';
 export default function Component() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [copySuccess, setCopySuccess] = useState('');
 
   const { querySurveys, surveys, handling } = useSurveyStore(
     useShallow((state) => ({
@@ -74,14 +76,45 @@ export default function Component() {
                 {Object.keys(survey.questions).length} Câu hỏi
               </p>
             </CardContent>
-            <CardFooter className="flex justify-between">
+            <CardFooter className="flex justify-between items-center">
+              <div className="flex items-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mr-2"
+                  onClick={() => navigate(`survey/${survey.id}/edit`)}
+                >
+                  <EditIcon className="h-4 w-4 mr-2" />
+                  <div className="hidden md:block">Chỉnh sửa</div>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setCopySuccess(survey.id);
+                    navigator.clipboard.writeText(
+                      `${window.location.origin}/survey/${survey.id}`
+                    );
+                    toast({
+                      title: 'Sao chép link thành công',
+                      description:
+                        'Link khảo sát đã được sao chép vào clipboard',
+                    });
+                  }}
+                >
+                  {copySuccess !== survey.id ? (
+                    <CopyIcon className="h-4 w-4 mr-2" />
+                  ) : (
+                    <CheckCheck className={'h-4 w-4 mr-2'} />
+                  )}
+                  <div className="md:block hidden">Sao chép link</div>
+                </Button>
+              </div>
+
               <Button
-                variant="outline"
-                onClick={() => navigate(`survey/${survey.id}/edit`)}
+                size="sm"
+                onClick={() => navigate(`survey/${survey.id}/results`)}
               >
-                Chỉnh sửa
-              </Button>
-              <Button onClick={() => navigate(`survey/${survey.id}/results`)}>
                 Xem kết quả
               </Button>
             </CardFooter>

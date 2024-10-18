@@ -1,6 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import _ from 'lodash';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import {
+  CheckCheck,
+  CopyIcon,
+  Eye,
+  PlusCircle,
+  Save,
+  Trash2,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -41,6 +48,8 @@ import { Question } from '@/features/surveys/type';
 import { translations } from '@/locales/translations';
 import formatError from '@/utils/formatError';
 
+import ConfirmRemove from './ConfirmRemove';
+
 export default function CreateSurvey() {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -49,17 +58,26 @@ export default function CreateSurvey() {
   const isNew = location.state?.isNew || false;
   const { t } = useTranslation();
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [copySuccess, setCopySuccess] = useState('');
+  const [isRemove, setIsRemove] = useState(false);
 
-  const { survey, getSurvey, handling, createSurvey, updateSurvey } =
-    useSurveyStore(
-      useShallow((state) => ({
-        survey: state.surveys?.[surveyId!],
-        getSurvey: state.getSurveys,
-        handling: state.handling,
-        createSurvey: state.createSurvey,
-        updateSurvey: state.updateSurvey,
-      }))
-    );
+  const {
+    survey,
+    getSurvey,
+    handling,
+    createSurvey,
+    updateSurvey,
+    deleteSurvey,
+  } = useSurveyStore(
+    useShallow((state) => ({
+      survey: state.surveys?.[surveyId!],
+      getSurvey: state.getSurveys,
+      handling: state.handling,
+      createSurvey: state.createSurvey,
+      updateSurvey: state.updateSurvey,
+      deleteSurvey: state.deleteSurvey,
+    }))
+  );
 
   const updateQuestion = (path: (string | number)[], value: any) => {
     setQuestions((pre) => {
@@ -138,23 +156,71 @@ export default function CreateSurvey() {
   return (
     <div className="container mx-auto">
       {handling ? <Waiting /> : null}
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold mb-6">
+      {isRemove ? (
+        <ConfirmRemove
+          onClose={() => setIsRemove(false)}
+          onConfirm={() => {
+            deleteSurvey(surveyId!);
+            navigate('/');
+          }}
+        />
+      ) : null}
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-3xl font-bold">
           {t(isNew ? translations.actions.create : translations.actions.edit)}{' '}
           {t(translations.survey)}
         </h1>
-        <div>
+        <div className="flex items-center">
           {!isNew ? (
-            <Button
-              className="mr-4"
-              onClick={() => {
-                navigate(`/survey/${surveyId}`);
-              }}
-            >
-              Xem trước
-            </Button>
+            <>
+              <Button
+                size="sm"
+                className="mr-2"
+                variant="destructive"
+                onClick={() => {
+                  setIsRemove(true);
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+                <div className="hidden md:block ml-2">Xóa</div>
+              </Button>
+              <Button
+                size="sm"
+                className="mr-2"
+                onClick={() => {
+                  setCopySuccess(survey?.id || '');
+                  navigator.clipboard.writeText(
+                    `${window.location.origin}/survey/${survey?.id}`
+                  );
+                  toast({
+                    title: 'Sao chép link thành công',
+                    description: 'Link khảo sát đã được sao chép vào clipboard',
+                  });
+                }}
+              >
+                {copySuccess !== survey?.id ? (
+                  <CopyIcon className="h-4 w-4 " />
+                ) : (
+                  <CheckCheck className="h-4 w-4" />
+                )}
+                <div className="md:block hidden ml-2">Sao chép link</div>
+              </Button>
+              <Button
+                size="sm"
+                className="mr-2"
+                onClick={() => {
+                  navigate(`/survey/${surveyId}`, { state: { preview: true } });
+                }}
+              >
+                <Eye className="h-4 w-4" />
+                <div className="hidden md:block ml-2">Xem trước</div>
+              </Button>
+            </>
           ) : null}
-          <Button onClick={form.handleSubmit(onSubmit)}>Lưu</Button>
+          <Button size="sm" onClick={form.handleSubmit(onSubmit)}>
+            <Save className="h-4 w-4" />
+            <div className="hidden md:block ml-2">Lưu</div>
+          </Button>
         </div>
       </div>
       <Form {...form}>

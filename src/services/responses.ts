@@ -1,4 +1,11 @@
-import { addDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  getDocs,
+  query,
+  where,
+} from 'firebase/firestore';
 
 import { Response } from '@/features/responses/type';
 
@@ -20,5 +27,16 @@ export class ResponsesService {
       createdAt: Date.now(),
     });
     return docRef.id;
+  }
+
+  static async deleteResponses(surveyId: string): Promise<void> {
+    const q = query(
+      collection(firestore, 'responses'),
+      where('surveyId', '==', surveyId)
+    );
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach((doc) => {
+      deleteDoc(doc.ref);
+    });
   }
 }

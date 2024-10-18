@@ -64,7 +64,7 @@ const getTextRespone = (question: Question, value: any) => {
 const ResponseDetail = ({ onClose, survey, responses }: Props) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full ">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Chi tiết phản hồi</h2>
           <button
@@ -74,7 +74,7 @@ const ResponseDetail = ({ onClose, survey, responses }: Props) => {
             <X />
           </button>
         </div>
-        <div>
+        <div className="overflow-y-scroll" style={{ maxHeight: '80vh' }}>
           {Object.entries(JSON.parse(responses.answers || '{}')).map(
             ([questionId, response]) => (
               <div className="w-full pb-2 border-2 rounded-lg my-2 p-2">

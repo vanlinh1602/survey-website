@@ -1,7 +1,13 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-import { createSurvey, getSurvey, querySurveys, updateSurvey } from './api';
+import {
+  createSurvey,
+  deleteSurvey,
+  getSurvey,
+  querySurveys,
+  updateSurvey,
+} from './api';
 import { Survey, SurveyStoreAction, SurveyStoreState } from './type';
 
 const initialState: SurveyStoreState = {
@@ -103,6 +109,28 @@ export const useSurveyStore = create<SurveyStoreState & SurveyStoreAction>()(
         }),
         false,
         { type: 'survey/updateSurvey', data }
+      );
+    },
+    deleteSurvey: async (id) => {
+      set(
+        () => ({
+          handling: true,
+        }),
+        false,
+        { type: 'survey/deleteSurvey', id }
+      );
+      await deleteSurvey(id);
+      set(
+        (state) => {
+          const newSurveys = { ...state.surveys };
+          delete newSurveys[id];
+          return {
+            handling: false,
+            surveys: newSurveys,
+          };
+        },
+        false,
+        { type: 'survey/deleteSurvey', id }
       );
     },
   }))

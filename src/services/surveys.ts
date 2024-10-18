@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -39,5 +40,10 @@ export class SurveysService {
     const collectionDB = collection(firestore, 'surveys');
     const snapshot = await getDocs(collectionDB);
     return snapshot.docs.map((d) => d.data() as Survey);
+  }
+
+  static async deleteSurvey(id: string): Promise<void> {
+    const docRef = doc(firestore, 'surveys', id);
+    await deleteDoc(docRef);
   }
 }

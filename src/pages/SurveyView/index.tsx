@@ -4,7 +4,7 @@ import Parser from 'html-react-parser';
 import _ from 'lodash';
 import { AlertCircle, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { useShallow } from 'zustand/shallow';
 
 import sgdLogo from '@/assets/sgd_kien_giang.jpg';
@@ -30,6 +30,7 @@ import formatError from '@/utils/formatError';
 export default function SurveyView() {
   const { toast } = useToast();
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const [responses, setResponses] = useState<
     CustomObject<string | string[] | string[][]>
   >({});
@@ -344,12 +345,13 @@ export default function SurveyView() {
           </Card>
         )
       )}
-
-      <div className="mt-6">
-        <Button onClick={handleSubmit} className="w-full">
-          Gửi khảo sát
-        </Button>
-      </div>
+      {location.state?.preview ? null : (
+        <div className="mt-6">
+          <Button onClick={handleSubmit} className="w-full">
+            Gửi khảo sát
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
