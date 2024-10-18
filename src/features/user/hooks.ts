@@ -49,7 +49,7 @@ export const useUserStore = create<UserStoreState & UserStoreActions>()(
           handling: true,
         }),
         false,
-        { type: 'user/addUser', email, userInfo }
+        { type: 'user/addUser', email }
       );
       await UsersService.createUser(email, userInfo);
       set(
@@ -62,6 +62,7 @@ export const useUserStore = create<UserStoreState & UserStoreActions>()(
               email,
               avatar: userInfo.avatar || '',
               displayName: userInfo.displayName || '',
+              unit: userInfo.unit || '',
             },
           },
         }),
@@ -69,7 +70,36 @@ export const useUserStore = create<UserStoreState & UserStoreActions>()(
         {
           type: 'user/addUser',
           email,
-          userInfo,
+        }
+      );
+    },
+    updateUser: async (email: string, userInfo: Partial<User>) => {
+      set(
+        () => ({
+          handling: true,
+        }),
+        false,
+        { type: 'user/updateUser', email }
+      );
+      await UsersService.updateUser(email, userInfo);
+      set(
+        (state) => ({
+          handling: false,
+          users: {
+            ...state.users,
+            [email]: {
+              uid: userInfo.uid || '',
+              email,
+              avatar: userInfo.avatar || '',
+              displayName: userInfo.displayName || '',
+              unit: userInfo.unit || '',
+            },
+          },
+        }),
+        false,
+        {
+          type: 'user/updateUser',
+          email,
         }
       );
     },
@@ -95,7 +125,7 @@ export const useUserStore = create<UserStoreState & UserStoreActions>()(
         { type: 'user/deleteUser', email }
       );
     },
-    getUsers: async () => {
+    getUsers: async (filter) => {
       set(
         () => ({
           handling: true,
@@ -103,7 +133,7 @@ export const useUserStore = create<UserStoreState & UserStoreActions>()(
         false,
         { type: 'user/getUsers' }
       );
-      const users = await UsersService.queryUsers();
+      const users = await UsersService.queryUsers(filter);
       set(
         () => ({
           handling: false,

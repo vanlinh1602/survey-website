@@ -31,9 +31,20 @@ export const QuestionGroup = ({
   return (
     <Card key={questionId} className="mb-6">
       <CardHeader>
-        <CardTitle className="flex items-center">
-          {question.text}
-          {question.required && <span className="text-red-500 ml-1">*</span>}
+        <CardTitle className="flex justify-between items-center text-base">
+          <span>
+            {question.text}
+            {question.required && <span className="text-red-500 ml-1">*</span>}
+          </span>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              onChange([questionId, responses.length || 0], [] as string[]);
+            }}
+          >
+            Thêm câu trả lời
+          </Button>
         </CardTitle>
         {error && (
           <Alert variant="destructive">
@@ -44,17 +55,6 @@ export const QuestionGroup = ({
         )}
       </CardHeader>
       <CardContent>
-        <div className="flex justify-end">
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => {
-              onChange([questionId, responses.length || 0], [] as string[]);
-            }}
-          >
-            Thêm câu trả lời
-          </Button>
-        </div>
         <div className="space-y-2 ">
           {_.range(responses.length || 1).map((response) => (
             <Accordion

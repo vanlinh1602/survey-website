@@ -1,16 +1,16 @@
 import Parser from 'html-react-parser';
 import _ from 'lodash';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { useShallow } from 'zustand/shallow';
 
-import sgdLogo from '@/assets/sgd_kien_giang.jpg';
 import { Waiting } from '@/components';
 import { useToast } from '@/components/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { createResponse } from '@/features/responses/api';
 import { QuestionView } from '@/features/surveys/components/questions/view';
 import { useSurveyStore } from '@/features/surveys/hooks';
+import { unitConfig } from '@/lib/options';
 import formatError from '@/utils/formatError';
 
 export default function SurveyView() {
@@ -29,6 +29,11 @@ export default function SurveyView() {
       getSurvey: state.getSurveys,
       surveyData: state.surveys?.[id!],
     }))
+  );
+
+  const surveyUnitConfig = useMemo(
+    () => unitConfig[surveyData?.unit ?? ''],
+    [surveyData?.unit]
   );
 
   useEffect(() => {
@@ -106,15 +111,16 @@ export default function SurveyView() {
     <div className="container mx-auto max-w-3xl">
       {loading ? <Waiting /> : null}
       <div className="flex flex-col items-center mb-3">
-        <p className="text-center">UBND TỈNH KIÊN GIANG</p>
-        <p className="text-center">
-          <strong>SỞ GIÁO DỤC VÀ ĐÀO TẠO</strong>
-        </p>
-        <img
-          src={sgdLogo}
-          alt="survey"
-          className="w-28 h-28 object-cover rounded-full mt-3"
-        />
+        {surveyUnitConfig.titleSurvey
+          ? Parser(surveyUnitConfig.titleSurvey)
+          : null}
+        {surveyUnitConfig.logo ? (
+          <img
+            src={surveyUnitConfig.logo}
+            alt="survey"
+            className="w-28 h-28 object-cover rounded-full mt-3"
+          />
+        ) : null}
       </div>
       <div className="mb-5">{Parser(surveyData?.description ?? '')}</div>
 

@@ -44,7 +44,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useSurveyStore } from '@/features/surveys/hooks';
-import { Question } from '@/features/surveys/type';
+import { Question, Survey } from '@/features/surveys/type';
+import { useUserStore } from '@/features/user/hooks';
+import { unitAvailable } from '@/lib/options';
 import { translations } from '@/locales/translations';
 import formatError from '@/utils/formatError';
 
@@ -79,6 +81,12 @@ export default function CreateSurvey() {
     }))
   );
 
+  const { userInfo } = useUserStore(
+    useShallow((state) => ({
+      userInfo: state.information,
+    }))
+  );
+
   const updateQuestion = (path: (string | number)[], value: any) => {
     setQuestions((pre) => {
       const updated = _.cloneDeep(pre);
@@ -88,6 +96,7 @@ export default function CreateSurvey() {
   };
 
   const formSchema = z.object({
+    unit: z.string(),
     title: z.string(),
     description: z.string(),
   });
@@ -97,6 +106,7 @@ export default function CreateSurvey() {
     defaultValues: {
       title: '',
       description: '',
+      unit: userInfo?.unit !== 'xbot' ? userInfo?.unit : '',
     },
   });
 
@@ -112,6 +122,7 @@ export default function CreateSurvey() {
       form.reset({
         title: survey.title,
         description: survey.description,
+        unit: survey.unit,
       });
       setQuestions(survey.questions || []);
     }
@@ -119,31 +130,32 @@ export default function CreateSurvey() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      if (isNew) {
-        const data = {
-          ...values,
-          questions,
-          lasted: {
-            time: Date.now(),
-          },
-          id: surveyId!,
-        };
-        await createSurvey(data);
-        navigate(`/survey/${surveyId}`);
-      } else {
-        const data = {
-          ...values,
-          questions,
-          lasted: {
-            time: Date.now(),
-          },
-        };
-        await updateSurvey(surveyId!, { id: surveyId!, ...data });
+      if (!values.title || !values.description || !values.unit) {
         toast({
-          title: 'Success',
-          description: 'Survey updated successfully',
+          title: 'Thiếu thông tin',
+          description: 'Các thông tin bắc buộc không được để trống',
+          variant: 'destructive',
         });
+        return;
       }
+      const data: Survey = {
+        ...values,
+        questions,
+        lasted: {
+          time: Date.now(),
+          user: userInfo?.email || '',
+        },
+        id: surveyId!,
+      };
+      if (isNew) {
+        await createSurvey(data);
+      } else {
+        await updateSurvey(surveyId!, data);
+      }
+      toast({
+        title: 'Thành công',
+        description: 'Khảo sát đã được lưu',
+      });
     } catch (error) {
       toast({
         title: 'Error',
@@ -165,8 +177,8 @@ export default function CreateSurvey() {
           }}
         />
       ) : null}
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-3xl font-bold">
+      <div className="flex items-center justify-between mb-4 h-9">
+        <h1 className="text-3xl font-bold sticky top-7">
           {t(isNew ? translations.actions.create : translations.actions.edit)}{' '}
           {t(translations.survey)}
         </h1>
@@ -223,6 +235,7 @@ export default function CreateSurvey() {
           </Button>
         </div>
       </div>
+
       <Form {...form}>
         <Card className="mb-6">
           <CardHeader>
@@ -234,10 +247,44 @@ export default function CreateSurvey() {
           <CardContent className="space-y-4">
             <FormField
               control={form.control}
+              name="unit"
+              render={({ field }) => (
+                <FormItem className="flex items-center">
+                  <FormLabel>
+                    Đơn vị
+                    <span className="text-red-500 ml-1">*</span>
+                  </FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={userInfo?.unit !== 'xbot'}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="w-[180px] ml-4">
+                        <SelectValue placeholder="Chọn đơn vị" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.entries(unitAvailable).map(([key, unit]) => (
+                        <SelectItem key={key} value={key}>
+                          {unit}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tiêu đề</FormLabel>
+                  <FormLabel>
+                    Tiêu đề
+                    <span className="text-red-500 ml-1">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="Nhập tiêu đề" />
                   </FormControl>
@@ -250,7 +297,10 @@ export default function CreateSurvey() {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Mô tả</FormLabel>
+                  <FormLabel>
+                    Mô tả
+                    <span className="text-red-500 ml-1">*</span>
+                  </FormLabel>
                   <FormControl>
                     <BundledEditor
                       onChange={(_e, editor) => {
@@ -406,7 +456,9 @@ export default function CreateSurvey() {
                             const reader = new FileReader();
                             reader.onload = () => {
                               const content = reader.result as string;
-                              const wb = XLSX.read(content, { type: 'binary' });
+                              const wb = XLSX.read(content, {
+                                type: 'binary',
+                              });
                               const ws = wb.Sheets[wb.SheetNames[0]];
                               const data = XLSX.utils.sheet_to_json(ws);
                               const params: string[] = data

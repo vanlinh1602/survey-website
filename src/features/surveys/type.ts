@@ -27,9 +27,11 @@ export type Survey = {
   id: string;
   title: string;
   description: string;
+  unit: string;
   questions: Question[];
   lasted?: {
     time: number;
+    user: string;
   };
 };
 
@@ -40,7 +42,7 @@ export type SurveyStoreState = {
 
 export type SurveyStoreAction = {
   getSurveys: (id: string) => Promise<void>;
-  querySurveys: () => Promise<void>;
+  querySurveys: (filter?: CustomObject<string>) => Promise<void>;
   createSurvey: (data: Survey) => Promise<void>;
   updateSurvey: (id: string, data: Survey) => Promise<void>;
   deleteSurvey: (id: string) => Promise<void>;

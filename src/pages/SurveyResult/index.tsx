@@ -183,60 +183,6 @@ export default function ViewResults() {
           </div>
         </CardContent>
       </Card>
-
-      {/* <Tabs defaultValue="chart" className="mb-6">
-        <TabsList>
-          <TabsTrigger value="chart">Chart View</TabsTrigger>
-          <TabsTrigger value="table">Table View</TabsTrigger>
-        </TabsList>
-        <TabsContent value="chart">
-          <Card>
-            <CardHeader>
-              <CardTitle>Response Distribution</CardTitle>
-            </CardHeader>
-            <CardContent className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data}>
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="#8884d8" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="table">
-          <Card>
-            <CardHeader>
-              <CardTitle>Response Distribution</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Response</TableHead>
-                    <TableHead>Count</TableHead>
-                    <TableHead>Percentage</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.map((item) => (
-                    <TableRow key={item.name}>
-                      <TableCell>{item.name}</TableCell>
-                      <TableCell>{item.value}</TableCell>
-                      <TableCell>
-                        {((item.value / 100) * 100).toFixed(2)}%
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
- */}
       <Card>
         <CardHeader>
           <CardTitle>Tất cả phải hồi</CardTitle>

@@ -19,9 +19,11 @@ export const getSurvey = async (id: string): Promise<Survey | null> => {
   }
 };
 
-export const querySurveys = async (): Promise<Survey[]> => {
+export const querySurveys = async (
+  filter?: CustomObject<string>
+): Promise<Survey[]> => {
   try {
-    const result = await SurveysService.querySurveys();
+    const result = await SurveysService.querySurveys(filter);
     return result;
   } catch (error) {
     toast({

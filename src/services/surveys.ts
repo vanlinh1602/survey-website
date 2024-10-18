@@ -4,8 +4,10 @@ import {
   doc,
   getDoc,
   getDocs,
+  query,
   setDoc,
   updateDoc,
+  where,
 } from 'firebase/firestore';
 
 import { Survey } from '@/features/surveys/type';
@@ -36,9 +38,18 @@ export class SurveysService {
     return docRef.id;
   }
 
-  static async querySurveys(): Promise<Survey[]> {
+  static async querySurveys(filter?: CustomObject<string>): Promise<Survey[]> {
     const collectionDB = collection(firestore, 'surveys');
-    const snapshot = await getDocs(collectionDB);
+    let snapshot;
+    if (filter) {
+      const queries = Object.entries(filter).map(([key, value]) =>
+        where(key, '==', value)
+      );
+      const q = query(collectionDB, ...queries);
+      snapshot = await getDocs(q);
+    } else {
+      snapshot = await getDocs(collectionDB);
+    }
     return snapshot.docs.map((d) => d.data() as Survey);
   }
 

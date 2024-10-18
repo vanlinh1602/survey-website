@@ -53,7 +53,7 @@ export const UnitQuestion = ({
   return (
     <Card key={questionId} className="mb-6">
       <CardHeader>
-        <CardTitle className="flex items-center">
+        <CardTitle className="flex items-center text-base">
           {question.text}
           {question.required && <span className="text-red-500 ml-1">*</span>}
         </CardTitle>

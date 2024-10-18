@@ -48,7 +48,7 @@ export const useSurveyStore = create<SurveyStoreState & SurveyStoreAction>()(
         );
       }
     },
-    querySurveys: async () => {
+    querySurveys: async (filter) => {
       set(
         () => ({
           handling: true,
@@ -56,7 +56,7 @@ export const useSurveyStore = create<SurveyStoreState & SurveyStoreAction>()(
         false,
         { type: 'survey/querySurveys' }
       );
-      const surveys = await querySurveys();
+      const surveys = await querySurveys(filter);
       set(
         () => ({
           handling: false,

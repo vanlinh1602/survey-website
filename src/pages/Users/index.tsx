@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react';
+import { Edit2, FilterIcon, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/shallow';
 
@@ -7,15 +7,6 @@ import { useToast } from '@/components/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
   Table,
   TableBody,
   TableCell,
@@ -23,30 +14,48 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { UserEditor } from '@/features/user/components';
 import { useUserStore } from '@/features/user/hooks';
 import { User } from '@/features/user/type';
+import { unitAvailable } from '@/lib/options';
 import formatError from '@/utils/formatError';
+
+import { Filter } from './Filter';
 
 export default function UserManagement() {
   const { toast } = useToast();
-  const { getUser, handling, allUser, addUser, deleteUser, activeUser } =
-    useUserStore(
-      useShallow((state) => ({
-        getUser: state.getUsers,
-        handling: state.handling,
-        allUser: state.users,
-        addUser: state.addUser,
-        deleteUser: state.deleteUser,
-        activeUser: state.information,
-      }))
-    );
+  const {
+    getUsers,
+    handling,
+    allUser,
+    updateUser,
+    deleteUser,
+    activeUser,
+    addUser,
+  } = useUserStore(
+    useShallow((state) => ({
+      getUsers: state.getUsers,
+      handling: state.handling,
+      allUser: state.users,
+      updateUser: state.updateUser,
+      addUser: state.addUser,
+      deleteUser: state.deleteUser,
+      activeUser: state.information,
+    }))
+  );
 
   const [users, setUsers] = useState<User[]>([]);
-  const [newUser, setNewUser] = useState<User>();
+  const [userDialog, setUserDialog] = useState<User>();
+  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
 
   useEffect(() => {
     try {
-      getUser();
+      if (activeUser?.unit !== 'xbot') {
+        const filter = { unit: activeUser?.unit || '' };
+        getUsers(filter);
+      } else {
+        getUsers();
+      }
     } catch (error) {
       toast({
         title: 'Error',
@@ -54,84 +63,71 @@ export default function UserManagement() {
         variant: 'destructive',
       });
     }
-  }, [getUser, toast]);
+  }, [activeUser?.unit, getUsers, toast]);
 
   useEffect(() => {
     setUsers(Object.values(allUser));
   }, [allUser]);
 
+  const handleFilter = (filter: { unit?: string }) => {
+    const filteredUsers = Object.values(allUser).filter(
+      (user) => !filter.unit || user.unit === filter.unit
+    );
+    setUsers(filteredUsers);
+    setIsFilterDropdownOpen(false);
+  };
+
   return (
     <div className="container mx-auto p-4">
       {handling ? <Waiting /> : null}
-      <Dialog
-        open={!!newUser}
-        onOpenChange={(open) => {
-          if (!open) {
-            setNewUser(undefined);
-          }
-        }}
-      >
-        <DialogTrigger asChild>
+      {userDialog ? (
+        <UserEditor
+          user={userDialog}
+          onConfirm={(newUser) => {
+            if (newUser.uid) {
+              updateUser(newUser.email, newUser);
+            } else {
+              addUser(newUser.email, newUser);
+            }
+            setUserDialog(undefined);
+          }}
+          onClose={() => setUserDialog(undefined)}
+        />
+      ) : null}
+      {activeUser?.unit === 'xbot' ? (
+        <div className="flex justify-between">
           <Button
-            onClick={() => {
-              setNewUser({ uid: '', email: '', displayName: '', avatar: '' });
-            }}
+            onClick={() =>
+              setUserDialog({
+                email: '',
+                displayName: '',
+                unit: '',
+                avatar: '',
+                uid: '',
+              })
+            }
             className="mb-4"
           >
             Thêm người dùng
           </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Thêm người dùng</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Tên
-              </Label>
-              <Input
-                id="name"
-                value={newUser?.displayName}
-                onChange={(e) =>
-                  setNewUser((pre) => ({
-                    ...(pre || { uid: '', email: '', avatar: '' }),
-                    displayName: e.target.value,
-                  }))
-                }
-                className="col-span-3"
+          <div>
+            <Button
+              aria-label="Filter"
+              variant="secondary"
+              className="bg-gray-200 hover:bg-gray-300"
+              onClick={() => setIsFilterDropdownOpen((pre) => !pre)}
+            >
+              <FilterIcon className="mr-2" /> Lọc
+            </Button>
+            {isFilterDropdownOpen ? (
+              <Filter
+                onClose={() => setIsFilterDropdownOpen(false)}
+                onFilter={handleFilter}
               />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
-                Email
-              </Label>
-              <Input
-                id="email"
-                value={newUser?.email}
-                onChange={(e) =>
-                  setNewUser((pre) => ({
-                    ...(pre || { uid: '', displayName: '', avatar: '' }),
-                    email: e.target.value,
-                  }))
-                }
-                className="col-span-3"
-              />
-            </div>
+            ) : null}
           </div>
-          <Button
-            onClick={() => {
-              if (newUser) {
-                addUser(newUser.email, newUser);
-                setNewUser(undefined);
-              }
-            }}
-          >
-            Thêm
-          </Button>
-        </DialogContent>
-      </Dialog>
-
+        </div>
+      ) : null}
       <Card>
         <CardHeader>
           <CardTitle>Danh sách người dùng</CardTitle>
@@ -140,9 +136,12 @@ export default function UserManagement() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
+                <TableHead>Tên</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>Đơn vị</TableHead>
+                {activeUser?.unit !== 'xbot' ? null : (
+                  <TableHead>Actions</TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -150,17 +149,28 @@ export default function UserManagement() {
                 <TableRow key={user.email}>
                   <TableCell>{user.displayName}</TableCell>
                   <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    {activeUser?.email !== user.email ? (
+                  <TableCell>{unitAvailable[user.unit]}</TableCell>
+                  {activeUser?.unit !== 'xbot' ? null : (
+                    <TableCell>
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => deleteUser(user.email)}
+                        onClick={() => setUserDialog(user)}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Edit2 className="h-4 w-4" />
                       </Button>
-                    ) : null}
-                  </TableCell>
+                      {activeUser?.email !== user.email ? (
+                        <Button
+                          className="ml-2"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => deleteUser(user.email)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      ) : null}
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

@@ -4,8 +4,10 @@ import {
   doc,
   getDoc,
   getDocs,
+  query,
   setDoc,
   updateDoc,
+  where,
 } from 'firebase/firestore';
 
 import { User } from '@/features/user/type';
@@ -22,9 +24,18 @@ export class UsersService {
     return null;
   }
 
-  static async queryUsers(): Promise<User[]> {
+  static async queryUsers(filter?: CustomObject<string>): Promise<User[]> {
     const collectionDB = collection(firestore, 'users');
-    const snapshot = await getDocs(collectionDB);
+    let snapshot;
+    if (filter) {
+      const queries = Object.entries(filter).map(([key, value]) =>
+        where(key, '==', value)
+      );
+      const q = query(collectionDB, ...queries);
+      snapshot = await getDocs(q);
+    } else {
+      snapshot = await getDocs(collectionDB);
+    }
     return snapshot.docs.map((d) => d.data() as User);
   }
 

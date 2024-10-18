@@ -17,6 +17,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useSurveyStore } from '@/features/surveys/hooks';
+import { useUserStore } from '@/features/user/hooks';
 import { generateID } from '@/lib/utils';
 import { translations } from '@/locales/translations';
 
@@ -33,12 +34,19 @@ export default function Component() {
     }))
   );
 
+  const { user } = useUserStore(
+    useShallow((state) => ({
+      user: state.information,
+    }))
+  );
+
   useEffect(() => {
-    if (!surveys) {
+    if (user?.unit === 'xbot') {
       querySurveys();
+    } else {
+      querySurveys({ unit: user?.unit || '' });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [querySurveys]);
+  }, [querySurveys, user?.unit]);
 
   return (
     <>
@@ -66,9 +74,15 @@ export default function Component() {
                 </div>
               </CardTitle>
               <CardDescription>
-                {survey.lasted?.time
-                  ? moment(survey.lasted?.time).fromNow()
-                  : '----'}
+                <div className="flex line-clamp-1 overflow-ellipsis space-x-2">
+                  <div>
+                    {survey.lasted?.time
+                      ? moment(survey.lasted?.time).fromNow()
+                      : '----'}
+                  </div>
+                  <div>-</div>
+                  <div>{survey.lasted?.user || '----'}</div>
+                </div>
               </CardDescription>
             </CardHeader>
             <CardContent>
