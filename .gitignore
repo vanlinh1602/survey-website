@@ -24,3 +24,5 @@ configs/
 *.njsproj
 *.sln
 *.sw?
+
+.firebase/
