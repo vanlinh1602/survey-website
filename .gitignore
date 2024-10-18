@@ -26,3 +26,5 @@ configs/
 *.sw?
 
 .firebase/
+
+tsconfig.*.tsbuildinfo
