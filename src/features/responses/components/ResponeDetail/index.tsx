@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import { X } from 'lucide-react';
 
+import citiesJson from '@/data/cities.json';
 import { Question, Survey } from '@/features/surveys/type';
 
 import { Response } from '../../type';
@@ -14,6 +15,7 @@ type Props = {
 const getTextRespone = (question: Question, value: any) => {
   switch (question.type) {
     case 'input':
+    case 'textarea':
       return (
         <div>
           <b>{question.text}:</b>
@@ -56,6 +58,28 @@ const getTextRespone = (question: Question, value: any) => {
           ))}
         </div>
       );
+    case 'unit': {
+      const [province, district, ward] = value;
+      const provineName = _.get(citiesJson, [province, 'name'], '');
+      const districtName = _.get(
+        citiesJson,
+        [province, 'districts', district, 'name'],
+        ''
+      );
+      const wardName = _.get(
+        citiesJson,
+        [province, 'districts', district, 'wards', ward, 'name'],
+        ''
+      );
+      return (
+        <div>
+          <b>{question.text}:</b>
+          <span className="ml-2">
+            {provineName} - {districtName} - {wardName}
+          </span>
+        </div>
+      );
+    }
     default:
       return '';
   }

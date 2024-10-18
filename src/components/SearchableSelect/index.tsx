@@ -41,8 +41,11 @@ export default function SearchableSelect({
       if (selectedValue) {
         setSelectValue(selectedValue);
       }
+    } else {
+      setSelectValue(undefined);
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -56,7 +59,7 @@ export default function SearchableSelect({
           {selectValue ? (
             <div className="flex">{selectValue.label}</div>
           ) : (
-            placeholder
+            <div className="flex opacity-50">{placeholder}</div>
           )}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>

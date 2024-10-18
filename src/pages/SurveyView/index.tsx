@@ -1,29 +1,15 @@
-'use client';
-
 import Parser from 'html-react-parser';
 import _ from 'lodash';
-import { AlertCircle, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { useShallow } from 'zustand/shallow';
 
 import sgdLogo from '@/assets/sgd_kien_giang.jpg';
-import { SearchableSelect, Waiting } from '@/components';
+import { Waiting } from '@/components';
 import { useToast } from '@/components/hooks/use-toast';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { createResponse } from '@/features/responses/api';
+import { QuestionView } from '@/features/surveys/components/questions/view';
 import { useSurveyStore } from '@/features/surveys/hooks';
 import formatError from '@/utils/formatError';
 
@@ -52,44 +38,11 @@ export default function SurveyView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleTextChange = (questionId: string, value: string) => {
-    setResponses((prev) => ({ ...prev, [questionId]: value }));
-    setErrors((prev) => ({ ...prev, [questionId]: '' }));
-  };
-
-  const handleMultipleChoiceChange = (questionId: string, value: string) => {
-    setResponses((prev) => ({ ...prev, [questionId]: value }));
-    setErrors((prev) => ({ ...prev, [questionId]: '' }));
-  };
-
-  const handleCheckboxChange = (
-    questionId: string,
-    value: string,
-    checked: boolean
-  ) => {
+  const handleResponseChange = (path: (string | number)[], value: any) => {
     setResponses((prev) => {
-      const currentValues = (prev[questionId] as string[]) || [];
-      if (checked) {
-        return { ...prev, [questionId]: [...currentValues, value] };
-      } else {
-        return {
-          ...prev,
-          [questionId]: currentValues.filter((v) => v !== value),
-        };
-      }
-    });
-    setErrors((prev) => ({ ...prev, [questionId]: '' }));
-  };
-
-  const hanleQuestionGroupChange = (
-    questionId: string,
-    path: (string | number)[],
-    value: any
-  ) => {
-    setResponses((prev) => {
-      const currentValues = _.cloneDeep(prev);
-      _.set(currentValues, [questionId, ...path], value);
-      return currentValues;
+      const updateValue = _.cloneDeep(prev);
+      _.set(updateValue, path, value);
+      return updateValue;
     });
   };
 
@@ -167,182 +120,14 @@ export default function SurveyView() {
 
       {Object.entries(surveyData?.questions ?? {}).map(
         ([questionId, question]) => (
-          <Card key={questionId} className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                {question.text}
-                {question.required && (
-                  <span className="text-red-500 ml-1">*</span>
-                )}
-              </CardTitle>
-              {errors[questionId] && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Thiếu thông tin</AlertTitle>
-                  <AlertDescription>{errors[questionId]}</AlertDescription>
-                </Alert>
-              )}
-            </CardHeader>
-            <CardContent>
-              {question.type === 'questionGroup' ? (
-                <div className="flex justify-end">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() =>
-                      hanleQuestionGroupChange(
-                        questionId,
-                        [(responses?.[questionId] as string[][])?.length || 0],
-                        []
-                      )
-                    }
-                  >
-                    Thêm câu trả lời
-                  </Button>
-                </div>
-              ) : null}
-
-              {question.type === 'input' && (
-                <Input
-                  value={(responses[questionId] as string) || ''}
-                  onChange={(e) => handleTextChange(questionId, e.target.value)}
-                  placeholder="Nhập câu trả lời của bạn"
-                />
-              )}
-              {question.type === 'radio' && (
-                <RadioGroup
-                  value={responses[questionId] as string}
-                  onValueChange={(value) =>
-                    handleMultipleChoiceChange(questionId, value)
-                  }
-                >
-                  {question.params?.map((option, index) => (
-                    <div key={option} className="flex items-center space-x-2">
-                      <RadioGroupItem
-                        value={index.toString()}
-                        id={`${questionId}-${option}`}
-                      />
-                      <Label htmlFor={`${questionId}-${option}`}>
-                        {option}
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              )}
-              {question.type === 'checkbox' && (
-                <div className="space-y-2">
-                  {question.params?.map((option, index) => (
-                    <div key={option} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`${questionId}-${option}`}
-                        checked={(
-                          (responses[questionId] as string[]) || []
-                        ).includes(index.toString())}
-                        onCheckedChange={(checked) =>
-                          handleCheckboxChange(
-                            questionId,
-                            index.toString(),
-                            checked as boolean
-                          )
-                        }
-                      />
-                      <Label htmlFor={`${questionId}-${option}`}>
-                        {option}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {question.type === 'questionGroup' && (
-                <div className="space-y-2 ">
-                  {_.range(
-                    (responses?.[questionId] as string[][])?.length || 1
-                  ).map((response) => (
-                    <Accordion
-                      type="single"
-                      collapsible
-                      defaultValue={`item-${response}`}
-                    >
-                      <AccordionItem value={`item-${response}`}>
-                        <AccordionTrigger>
-                          <div className="flex items-center">
-                            Câu trả lời {response + 1}
-                            {response ? (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setResponses((prev) => {
-                                    const currentValues = _.cloneDeep(prev);
-                                    const currentResponse =
-                                      currentValues[questionId];
-                                    (currentResponse as string[][])?.splice(
-                                      response,
-                                      1
-                                    );
-                                    return currentValues;
-                                  });
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            ) : null}
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <div className="px-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {question.subQuestions?.map(
-                              (subQuestion, index) => (
-                                <div>
-                                  <div className="mb-1">
-                                    {subQuestion.content}
-                                  </div>
-                                  <Input
-                                    value={
-                                      responses?.[questionId]?.[response]?.[
-                                        index
-                                      ] || ''
-                                    }
-                                    onChange={(e) =>
-                                      hanleQuestionGroupChange(
-                                        questionId,
-                                        [response, index],
-                                        e.target.value
-                                      )
-                                    }
-                                    placeholder={
-                                      subQuestion.placeholder ||
-                                      'Nhập câu trả lời'
-                                    }
-                                  />
-                                </div>
-                              )
-                            )}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
-                  ))}
-                </div>
-              )}
-
-              {question.type === 'select' && (
-                <SearchableSelect
-                  options={
-                    question.params?.map((option, index) => ({
-                      value: index.toString(),
-                      label: option,
-                    })) || []
-                  }
-                  onSelect={(value) =>
-                    handleMultipleChoiceChange(questionId, value)
-                  }
-                  placeholder="Chọn câu trả lời"
-                  value={responses[questionId] as string}
-                />
-              )}
-            </CardContent>
-          </Card>
+          <QuestionView
+            key={questionId}
+            question={question}
+            value={responses[questionId]}
+            questionId={questionId}
+            onChange={handleResponseChange}
+            error={errors[questionId] || ''}
+          />
         )
       )}
       {location.state?.preview ? null : (

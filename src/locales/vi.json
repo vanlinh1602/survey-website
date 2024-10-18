@@ -15,11 +15,13 @@
   },
 
   "questionTypes": {
+    "input": "Nhập câu trả lời",
+    "textarea": "Nhập đoạn văn",
     "radio": "Radio",
     "checkbox": "Checkbox",
-    "input": "Nhập câu trả lời",
+    "select": "Lựa chọn câu trả lời",
     "questionGroup": "Nhóm câu hỏi",
-    "select": "Chọn câu trả lời"
+    "unit": "Đơn vị"
   },
 
   "surveyDetail": "Chi tiết khảo sát"

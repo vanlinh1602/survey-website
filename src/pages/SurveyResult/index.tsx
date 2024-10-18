@@ -23,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import citiesJson from '@/data/cities.json';
 import { getResponses } from '@/features/responses/api';
 import { ResponseDetail } from '@/features/responses/components';
 import { Response } from '@/features/responses/type';
@@ -85,7 +86,8 @@ export default function ViewResults() {
       Object.entries(answersParsed).forEach(([key, value]) => {
         const question: Question = _.get(survey?.questions, [key]);
         switch (question.type) {
-          case 'input': {
+          case 'input':
+          case 'textarea': {
             _.set(tmp, [0, key], value);
             break;
           }
@@ -109,6 +111,23 @@ export default function ViewResults() {
               (value as string[])
                 .map((v) => _.get(question.params, [v], ''))
                 .join(', ')
+            );
+            break;
+          }
+          case 'unit': {
+            const [province, district, ward] = value as string[];
+            _.set(
+              tmp,
+              [0, key],
+              `${_.get(citiesJson, [province, 'name'], '')} - ${_.get(
+                citiesJson,
+                [province, 'districts', district, 'name'],
+                ''
+              )} - ${_.get(
+                citiesJson,
+                [province, 'districts', district, 'wards', ward, 'name'],
+                ''
+              )}`
             );
             break;
           }
@@ -144,10 +163,14 @@ export default function ViewResults() {
           <CardDescription>Overview of survey responses</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center">
               <h3 className="text-2xl font-bold">{responses.length}</h3>
-              <p className="text-muted-foreground">Total Responses</p>
+              <p className="text-muted-foreground">Tổng phản hồi</p>
+            </div>
+            <div className="text-center">
+              <h3 className="text-2xl font-bold">{survey?.questions.length}</h3>
+              <p className="text-muted-foreground">Tổng câu hỏi</p>
             </div>
             <div className="flex items-center justify-center flex-col">
               <div className="text-center cursor-pointer" onClick={exportExcel}>

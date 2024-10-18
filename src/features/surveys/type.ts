@@ -1,5 +1,18 @@
+export type City = {
+  name: string;
+  districts?: CustomObject<City>;
+  wards?: CustomObject<City>;
+};
+
 export type Question = {
-  type: 'input' | 'radio' | 'checkbox' | 'questionGroup' | 'select';
+  type:
+    | 'input'
+    | 'radio'
+    | 'checkbox'
+    | 'questionGroup'
+    | 'select'
+    | 'textarea'
+    | 'unit';
   text: string;
   required?: boolean;
   placeholder?: string;

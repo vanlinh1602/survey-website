@@ -5,6 +5,7 @@ import { useShallow } from 'zustand/shallow';
 import { Waiting } from '@/components';
 import { useToast } from '@/components/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -131,34 +132,41 @@ export default function UserManagement() {
         </DialogContent>
       </Dialog>
 
-      <Table className="bg-white rounded-lg">
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.email}>
-              <TableCell>{user.displayName}</TableCell>
-              <TableCell>{user.email}</TableCell>
-              <TableCell>
-                {activeUser?.email !== user.email ? (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => deleteUser(user.email)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                ) : null}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <Card>
+        <CardHeader>
+          <CardTitle>Danh sách người dùng</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((user) => (
+                <TableRow key={user.email}>
+                  <TableCell>{user.displayName}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    {activeUser?.email !== user.email ? (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => deleteUser(user.email)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    ) : null}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

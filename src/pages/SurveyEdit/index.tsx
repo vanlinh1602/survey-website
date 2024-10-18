@@ -232,45 +232,6 @@ export default function CreateSurvey() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* <FormField
-              control={form.control}
-              name="logo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Logo</FormLabel>
-                  <FormControl>
-                    <>
-                      <div className="flex items-center">
-                        {field.value && (
-                          <img
-                            src={field.value}
-                            alt="Logo"
-                            className="w-14 h-14 object-cover rounded-full mr-4"
-                          />
-                        )}
-                        <DropzoneModal
-                          content="Upload Logo"
-                          onSubmit={(files) => {
-                            // convert file to base64
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                              field.onChange(reader.result as string);
-                            };
-                            reader.readAsDataURL(files[0]);
-                          }}
-                        />
-                      </div>
-                      <Input
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Nhập URL logo"
-                      />
-                    </>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            /> */}
             <FormField
               control={form.control}
               name="title"
@@ -572,25 +533,6 @@ export default function CreateSurvey() {
           </CardContent>
         </Card>
       </Form>
-
-      {/* <Card>
-        <CardHeader>
-          <CardTitle>Survey Settings</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center space-x-2">
-            <Switch id="anonymous" />
-            <Label htmlFor="anonymous">Allow anonymous responses</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch id="multiple-responses" />
-            <Label htmlFor="multiple-responses">
-              Allow multiple responses per user
-            </Label>
-          </div>
-        </CardContent>
-        <CardFooter></CardFooter>
-      </Card> */}
     </div>
   );
 }
