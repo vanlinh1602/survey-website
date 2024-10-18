@@ -83,10 +83,10 @@ export const QuestionGroup = ({
                 </AccordionTrigger>
                 <AccordionContent>
                   <div
-                    className={`px-2 gap-2 ${
+                    className={`px-2 gap-2 grid grid-cols-1  md:${
                       question.subQuestions?.length === 1
-                        ? 'grid grid-cols-1'
-                        : 'grid grid-cols-2'
+                        ? 'grid-cols-1'
+                        : 'grid-cols-2'
                     }`}
                   >
                     {question.subQuestions?.map((subQuestion, index) => (

@@ -32,7 +32,7 @@ export default function SurveyView() {
   );
 
   const surveyUnitConfig = useMemo(
-    () => unitConfig[surveyData?.unit ?? ''],
+    () => unitConfig[surveyData?.unit ?? ''] || {},
     [surveyData?.unit]
   );
 

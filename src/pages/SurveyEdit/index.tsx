@@ -149,6 +149,7 @@ export default function CreateSurvey() {
       };
       if (isNew) {
         await createSurvey(data);
+        navigate(`/survey/${surveyId}/edit`, { replace: true });
       } else {
         await updateSurvey(surveyId!, data);
       }

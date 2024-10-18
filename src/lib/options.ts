@@ -6,8 +6,8 @@ export const unitAvailable: CustomObject<string> = {
 };
 
 export const unitConfig: CustomObject<{
-  titleSurvey: string;
-  logo: string;
+  titleSurvey?: string;
+  logo?: string;
 }> = {
   '91': {
     titleSurvey:

@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/card';
 import { useSurveyStore } from '@/features/surveys/hooks';
 import { useUserStore } from '@/features/user/hooks';
+import { unitAvailable } from '@/lib/options';
 import { generateID } from '@/lib/utils';
 import { translations } from '@/locales/translations';
 
@@ -89,6 +90,10 @@ export default function Component() {
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 {Object.keys(survey.questions).length} Câu hỏi
               </p>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                <strong className="mr-2">Đơn vị:</strong>
+                {unitAvailable[survey.unit]}
+              </div>
             </CardContent>
             <CardFooter className="flex justify-between items-center">
               <div className="flex items-center">
