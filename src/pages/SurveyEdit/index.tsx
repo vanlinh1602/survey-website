@@ -258,6 +258,7 @@ export default function CreateSurvey() {
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
+                    value={field.value}
                     disabled={userInfo?.unit !== 'xbot'}
                   >
                     <FormControl>

@@ -68,84 +68,100 @@ export default function ViewResults() {
   }, []);
 
   const exportExcel = async () => {
-    const header: CustomObject<string> = {};
-    Object.entries(survey?.questions ?? {}).forEach(([key, value]) => {
-      if (value.subQuestions) {
-        value.subQuestions.forEach((subQuestion, index) => {
-          header[`${key}-${index}`] = `${value.text} - ${subQuestion.content}`;
-        });
-      } else {
-        header[key] = value.text;
-      }
-    });
-
-    const result: CustomObject<string>[] = [];
-    responses.forEach((response) => {
-      const tmp: CustomObject<string>[] = [];
-      const answersParsed = JSON.parse(response.answers);
-      Object.entries(answersParsed).forEach(([key, value]) => {
-        const question: Question = _.get(survey?.questions, [key]);
-        switch (question.type) {
-          case 'input':
-          case 'textarea': {
-            _.set(tmp, [0, key], value);
-            break;
-          }
-          case 'radio':
-          case 'select': {
-            _.set(tmp, [0, key], _.get(question.params, [value as string], ''));
-            break;
-          }
-          case 'questionGroup': {
-            (value as string[][]).forEach((v, k) => {
-              v.forEach((vv, kk) => {
-                _.set(tmp, [k, `${key}-${kk}`], vv);
-              });
-            });
-            break;
-          }
-          case 'checkbox': {
-            _.set(
-              tmp,
-              [0, key],
-              (value as string[])
-                .map((v) => _.get(question.params, [v], ''))
-                .join(', ')
-            );
-            break;
-          }
-          case 'unit': {
-            const [province, district, ward] = value as string[];
-            _.set(
-              tmp,
-              [0, key],
-              `${_.get(citiesJson, [province, 'name'], '')} - ${_.get(
-                citiesJson,
-                [province, 'districts', district, 'name'],
-                ''
-              )} - ${_.get(
-                citiesJson,
-                [province, 'districts', district, 'wards', ward, 'name'],
-                ''
-              )}`
-            );
-            break;
-          }
-          default:
-            break;
+    try {
+      const header: CustomObject<string> = {};
+      Object.entries(survey?.questions ?? {}).forEach(([key, value]) => {
+        if (value.subQuestions) {
+          value.subQuestions.forEach((subQuestion, index) => {
+            header[
+              `${key}-${index}`
+            ] = `${value?.text} - ${subQuestion?.content}`;
+          });
+        } else {
+          header[key] = value.text;
         }
       });
-      result.push(...tmp);
-    });
 
-    const ws = XLSX.utils.json_to_sheet([header, ...result], {
-      skipHeader: true,
-    });
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Responses');
-    XLSX.writeFile(wb, 'thống_kê_khảo_sát.xlsx');
+      const result: CustomObject<string>[] = [];
+      responses.forEach((response) => {
+        const tmp: CustomObject<string>[] = [];
+        const answersParsed = JSON.parse(response?.answers);
+        Object.entries(answersParsed).forEach(([key, value]) => {
+          const question: Question = _.get(survey?.questions, [key]);
+          switch (question.type) {
+            case 'input':
+            case 'textarea': {
+              _.setWith(tmp, [0, key], value, Object);
+              break;
+            }
+            case 'radio':
+            case 'select': {
+              _.setWith(
+                tmp,
+                [0, key],
+                _.get(question.params, [value as string], ''),
+                Object
+              );
+              break;
+            }
+            case 'questionGroup': {
+              (value as string[][]).forEach((v, k) => {
+                v.forEach((vv, kk) => {
+                  _.set(tmp, [k, `${key}-${kk}`], vv);
+                });
+              });
+              break;
+            }
+            case 'checkbox': {
+              _.setWith(
+                tmp,
+                [0, key],
+                (value as string[])
+                  .map((v) => _.get(question.params, [v], ''))
+                  .join(', '),
+                Object
+              );
+              break;
+            }
+            case 'unit': {
+              const [province, district, ward] = value as string[];
+              _.setWith(
+                tmp,
+                [0, key],
+                `${_.get(citiesJson, [province, 'name'], '')} - ${_.get(
+                  citiesJson,
+                  [province, 'districts', district, 'name'],
+                  ''
+                )} - ${_.get(
+                  citiesJson,
+                  [province, 'districts', district, 'wards', ward, 'name'],
+                  ''
+                )}`,
+                Object
+              );
+              break;
+            }
+            default:
+              break;
+          }
+        });
+        result.push(...tmp.filter((t) => !!t));
+      });
+
+      const ws = XLSX.utils.json_to_sheet([header, ...result], {
+        skipHeader: true,
+      });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Responses');
+      XLSX.writeFile(wb, `${survey?.title}.xlsx`);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
   };
-
   return (
     <div className="container mx-auto p-6">
       {waiting ? <Waiting /> : null}
