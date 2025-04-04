@@ -42,11 +42,11 @@ export const CheckBoxQuestion = ({
             <div key={option} className="flex items-center space-x-2">
               <Checkbox
                 id={`${questionId}-${option}`}
-                checked={checked.includes(index.toString())}
+                checked={checked?.includes(index.toString())}
                 onCheckedChange={(check) => {
                   const updated = check
-                    ? [...checked, index.toString()]
-                    : checked.filter((item) => item !== index.toString());
+                    ? [...(checked || []), index.toString()]
+                    : checked?.filter((item) => item !== index.toString());
                   onChange([questionId], updated);
                 }}
               />
