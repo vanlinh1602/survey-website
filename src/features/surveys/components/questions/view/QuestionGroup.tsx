@@ -36,15 +36,6 @@ export const QuestionGroup = ({
             {question.text}
             {question.required && <span className="text-red-500 ml-1">*</span>}
           </span>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => {
-              onChange([questionId, responses.length || 0], [] as string[]);
-            }}
-          >
-            Thêm câu trả lời
-          </Button>
         </CardTitle>
         {error && (
           <Alert variant="destructive">
@@ -65,7 +56,7 @@ export const QuestionGroup = ({
               <AccordionItem value={`item-${response}`}>
                 <AccordionTrigger>
                   <div className="flex items-center">
-                    Câu trả lời {response + 1}
+                    {`${(question as any).questionText || `Câu trả lời`} ${response + 1}`}
                     {response ? (
                       <Button
                         variant="ghost"
@@ -118,6 +109,16 @@ export const QuestionGroup = ({
             </Accordion>
           ))}
         </div>
+        <Button
+        className='mt-2'
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              onChange([questionId, responses.length || 0], [] as string[]);
+            }}
+          >
+            {(question as any).addButton || "Thêm câu trả lời"}
+          </Button>
       </CardContent>
     </Card>
   );
